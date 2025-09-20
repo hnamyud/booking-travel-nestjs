@@ -13,7 +13,6 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { PaymentsModule } from './payments/payments.module';
 import { BookingsModule } from './bookings/bookings.module';
 import { ServicesModule } from './services/services.module';
-import { FligtTicketsModule } from './fligt-tickets/fligt-tickets.module';
 import { FlightTicketsModule } from './flight-tickets/flight-tickets.module';
 import { HotelBookingsModule } from './hotel-bookings/hotel-bookings.module';
 import { AttractionTicketsModule } from './attraction-tickets/attraction-tickets.module';
@@ -44,7 +43,6 @@ import { AttractionTicketsModule } from './attraction-tickets/attraction-tickets
     PaymentsModule,
     BookingsModule,
     ServicesModule,
-    FligtTicketsModule,
     FlightTicketsModule,
     HotelBookingsModule,
     AttractionTicketsModule,

@@ -91,7 +91,7 @@ export class PaymentsService {
     return result;
   }
 
-  async remove(id: string) {
+  remove(id: string) {
     if(!mongoose.Types.ObjectId.isValid(id)) {
       throw new BadRequestException(`Not found payment`);
     }
