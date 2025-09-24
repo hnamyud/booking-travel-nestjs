@@ -117,7 +117,8 @@ export class AuthService {
           user: {
             _id,
             name,
-            email
+            email,
+            role
           }
         };
       }

@@ -1,4 +1,4 @@
-import { Controller, Post, UploadedFiles, UseInterceptors } from '@nestjs/common';
+import { Controller, Delete, Param, Post, UploadedFiles, UseInterceptors } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
@@ -16,5 +16,10 @@ export class UploadController {
       url: result.secure_url,
       public_id: result.public_id,
     }));
+  }
+
+  @Delete(':publicId')
+  async deleteImage(@Param('publicId') publicId: string) {
+    return await this.cloudinaryService.deleteImage(publicId);
   }
 }

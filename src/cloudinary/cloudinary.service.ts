@@ -14,4 +14,13 @@ export class CloudinaryService {
       toStream(file.buffer).pipe(upload);
     });
   }
+
+  async deleteImage(publicId: string): Promise<any> {
+    try {
+      const result = await v2.uploader.destroy(publicId);
+      return result; // { result: 'ok' } nếu xoá thành công
+    } catch (error) {
+      throw new Error(`Xoá ảnh thất bại: ${error.message}`);
+    }
+  }
 }

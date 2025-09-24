@@ -13,7 +13,7 @@ async function bootstrap() {
   
   // Config CORS
   app.enableCors({
-    origin: 'http://localhost:3000', // FE domain
+    origin: 'http://127.0.0.1:5500', // FE domain
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });

@@ -16,7 +16,7 @@ export class DestinationService {
   ) {}
 
   async create(createDestinationDto: CreateDestinationDto) {
-    const { name, country, description } = createDestinationDto;
+    const { name, country, description, images } = createDestinationDto;
 
     // Upload file lên Cloudinary
     // const uploadPromises = files.map(async file =>  await this.cloudinaryService.uploadFile(file));
@@ -32,6 +32,7 @@ export class DestinationService {
       name,
       country,
       description,
+      images
     });
     
     return newDestination;
@@ -75,16 +76,16 @@ export class DestinationService {
     });
   }
 
-  async update(updateDestinationDto: UpdateDestinationDto) {
-    const { _id, ...updateData } = updateDestinationDto;
+  async update(id: string, updateDestinationDto: UpdateDestinationDto) {
+    const {...updateData } = updateDestinationDto;
 
     // Validate ObjectId
-    if (!mongoose.Types.ObjectId.isValid(_id)) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       throw new BadRequestException('ID không hợp lệ');
     }
 
     const result = await this.destinationModel.updateOne(
-      { _id: _id },
+      { _id: id },
       { $set: updateData } // Sử dụng $set operator
     );
     return result;

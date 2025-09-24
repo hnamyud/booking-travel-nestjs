@@ -22,8 +22,6 @@ class Tour {
 }
 
 export class UpdateDestinationDto {
-    @IsNotEmpty({ message: 'ID không được bỏ trống' })
-    _id: string;
 
     @IsOptional()
     name?: string;

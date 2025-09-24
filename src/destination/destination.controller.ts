@@ -39,10 +39,10 @@ export class DestinationController {
     return this.destinationService.findOne(id);
   }
 
-  @Patch()
+  @Patch(':id')
   @ResponseMessage("Update a Destination")
-  update(@Body() updateDestinationDto: UpdateDestinationDto) {
-    const updatedDestination = this.destinationService.update(updateDestinationDto);
+  update(@Param('id') id: string, @Body() updateDestinationDto: UpdateDestinationDto) {
+    const updatedDestination = this.destinationService.update(id, updateDestinationDto);
     return updatedDestination;
   }
 
