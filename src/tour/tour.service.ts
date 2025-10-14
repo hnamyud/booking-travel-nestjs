@@ -86,21 +86,24 @@ export class TourService {
     if(!mongoose.Types.ObjectId.isValid(id)) {
       throw new BadRequestException(`Not found destination`);
     };
-    return await this.tourModel.findOne({
+    const tour = await this.tourModel.findOne({
       _id: id
     });
+    return tour.populate({ path: 'destinations', select: 
+      { name: 1, country: 1, description: 1, images: 1 }
+     });
   }
 
-  async update(updateTourDto: UpdateTourDto) {
-    const { _id, ...updateData } = updateTourDto;
+  async update(id: string, updateTourDto: UpdateTourDto) {
+    const { ...updateData } = updateTourDto;
 
     // Validate ObjectId
-    if (!mongoose.Types.ObjectId.isValid(_id)) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       throw new BadRequestException('ID không hợp lệ');
     }
     
     const result = await this.tourModel.updateOne(
-      { _id: _id },
+      { _id: id },
       { $set: updateData } // Sử dụng $set operator
     );
     return result;

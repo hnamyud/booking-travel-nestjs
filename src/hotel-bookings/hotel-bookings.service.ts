@@ -13,7 +13,6 @@ export class HotelBookingsService {
 
   async create(createHotelBookingDto: CreateHotelBookingDto) {
     const {
-      service_id,
       hotel_name,
       address,
       room_type,
@@ -22,12 +21,7 @@ export class HotelBookingsService {
       amenities
     } = createHotelBookingDto;
 
-    if(!mongoose.Types.ObjectId.isValid(service_id.toString())) {
-      throw new BadRequestException('Invalid service_id');
-    }
-
     const newHotelBooking = await this.hotelBookingModel.create({
-      service_id,
       hotel_name,
       address,
       room_type,

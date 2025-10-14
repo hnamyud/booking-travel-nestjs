@@ -7,6 +7,9 @@ export class CreateServiceDto {
     @IsNotEmpty({ message: 'Loại dịch vụ không được bỏ trống' })
     type: string; // e.g., "flight", "hotel", "car_rental"
 
+    @IsNotEmpty({ message: 'ID loại dịch vụ không được bỏ trống' })
+    type_id: string;
+
     @IsNotEmpty({ message: 'Mô tả dịch vụ không được bỏ trống' })
     description: string;
 

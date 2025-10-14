@@ -4,6 +4,9 @@ import mongoose, { HydratedDocument } from "mongoose";
 export type UserDocument = HydratedDocument<User>;
 @Schema({ timestamps: true })
 export class User {
+    @Prop({ type: mongoose.Schema.Types.ObjectId })
+    _id: mongoose.Schema.Types.ObjectId;
+
     @Prop()
     name: string;
 

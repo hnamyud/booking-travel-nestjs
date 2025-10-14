@@ -5,9 +5,6 @@ export type AttractionTicketDocument = HydratedDocument<AttractionTicket>;
 @Schema({ timestamps: true })
 export class AttractionTicket {
     @Prop()
-    service_id: mongoose.Schema.Types.ObjectId;
-
-    @Prop()
     attraction_name: string;
     
     @Prop()
@@ -24,6 +21,12 @@ export class AttractionTicket {
 
     @Prop()
     ticket_type: string;
+
+    @Prop({ type: Object })
+    images: {
+        url: string;
+        public_id: string;
+    };
 
     @Prop({ type: [String] })
     includes: string[];

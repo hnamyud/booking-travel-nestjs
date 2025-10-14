@@ -49,5 +49,5 @@ export class CreateTourDto {
     reviews?: Review[];
 
     @IsNotEmpty({message: 'Dịch vụ không được bỏ trống'})
-    service_id: mongoose.Schema.Types.ObjectId;
+    service_id?: mongoose.Schema.Types.ObjectId;
 }

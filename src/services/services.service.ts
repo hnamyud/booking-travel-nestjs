@@ -6,6 +6,7 @@ import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import aqp from 'api-query-params';
 import mongoose from 'mongoose';
+import { FlightTicket } from 'src/flight-tickets/schemas/flight-ticket.schema';
 
 @Injectable()
 export class ServicesService {
@@ -15,6 +16,7 @@ export class ServicesService {
     const {
       name,
       type,
+      type_id,
       description,
       price,
       isAvailable
@@ -22,6 +24,7 @@ export class ServicesService {
     const newService = await this.serviceModel.create({
       name,
       type,
+      type_id,
       description,
       price,
       isAvailable
@@ -39,22 +42,45 @@ export class ServicesService {
     const totalItems = (await this.serviceModel.find(filter)).length;
     const totalPages = Math.ceil(totalItems / defaultLimit);
 
-    const result = await this.serviceModel.find(filter)
+    const serviceType = filter.type;
+    delete filter.populate;
+
+    let query = this.serviceModel.find(filter)
       .skip(offset)
       .limit(defaultLimit)
-      .select('-password') // Loại trừ password
+      .select('-password')
       // @ts-ignore: Unreachable code error
-      .sort(sort)
-      .populate(population)
-      .exec();
+      .sort(sort);
+    if (serviceType === 'FlightTicket') {
+      query = query.populate({
+        path: 'type_id',
+        select: 'airline flight_number departure arrival' 
+      });
+    } else if (serviceType === 'HotelBooking') {
+      query = query.populate({
+        path: 'type_id',
+        select: 'hotel_name address room_type' 
+      });
+    } else if (serviceType === 'AttractionTicket') {
+      query = query.populate({
+        path: 'type_id',
+        select: 'attraction_name location valid_from valid_to'
+      });
+    } else {
+      // Default populate nếu không có type cụ thể
+      query = query.populate('type_id');
+    }
+
+    const result = await query.exec();
+
     return {
       meta: { 
-        current: currentPage, //trang hiện tại
-        pageSize: limit, //số lượng bản ghi đã lấy
-        pages: totalPages,  //tổng số trang với điều kiện query
-        total: totalItems // tổng số phần tử (số bản ghi)
+        current: currentPage,
+        pageSize: limit,
+        pages: totalPages,
+        total: totalItems
       },
-      result //kết quả query
+      result
     };
   }
 
@@ -62,9 +88,10 @@ export class ServicesService {
     if(!mongoose.Types.ObjectId.isValid(id)) {
       return `Not found service`;
     };
-    return await this.serviceModel.findOne({
+    const service = await this.serviceModel.findOne({
       _id: id
     });
+    return service.populate('type_id');
   }
 
   async update(id: string, updateServiceDto: UpdateServiceDto) {

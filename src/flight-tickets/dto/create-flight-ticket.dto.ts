@@ -2,8 +2,6 @@ import { IsNotEmpty } from "class-validator";
 import mongoose from "mongoose";
 
 export class CreateFlightTicketDto {
-    @IsNotEmpty({ message: 'ID dịch vụ không được bỏ trống' })  
-    service_id: mongoose.Schema.Types.ObjectId;
     
     @IsNotEmpty({ message: 'Hãng hàng không không được bỏ trống' })
     airline: string;

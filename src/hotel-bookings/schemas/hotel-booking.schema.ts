@@ -4,8 +4,6 @@ import mongoose, { HydratedDocument } from "mongoose";
 export type HotelBookingDocument = HydratedDocument<HotelBooking>;
 @Schema({ timestamps: true })
 export class HotelBooking {
-    @Prop()
-    service_id: mongoose.Schema.Types.ObjectId;
 
     @Prop()
     hotel_name: string;

@@ -1,19 +1,28 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { Public, ResponseMessage, User } from 'src/decorator/customize.decorator';
+import { GetUser, Public, ResponseMessage } from 'src/decorator/customize.decorator';
 import { IUser } from './user.interface';
+import { CheckPolicies } from 'src/decorator/policy.decorator';
+import { Action } from 'src/enum/action.enum';
+import { User } from './schema/user.schema';
+import { PoliciesGuard } from 'src/auth/policy.guard';
 
 @Controller('user')
+@UseGuards(PoliciesGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post()
+  @CheckPolicies({
+    handle: (ability) => ability.can(Action.Create, User),
+    message: 'Bạn không có quyền tạo mới User'
+  })
   @ResponseMessage("Create a new User")
   async create(
     @Body() createUserDto: CreateUserDto, 
-    @User() iuser: IUser
+    @GetUser() iuser: IUser
   ) {
     let newUser = await this.userService.create(createUserDto, iuser);
     return {
@@ -23,6 +32,10 @@ export class UserController {
   }
 
   @Get()
+  @CheckPolicies({
+    handle: (ability) => ability.can(Action.Read_All, User),
+    message: 'Bạn không có quyền xem tất cả danh sách User'
+  })
   @ResponseMessage("Fetch user with paginate")
   findAll(
     @Query('current') currentPage: string, 
@@ -39,21 +52,36 @@ export class UserController {
     return this.userService.findOne(id);
   }
 
-  @Patch()
+  @Post('profile')
+  @ResponseMessage("Fetch user profile")
+  getProfile(@GetUser() user: IUser) {
+    return this.userService.getProfile(user);
+  }
+
+  @Patch(':id')
+  @CheckPolicies({
+    handle: (ability) => ability.can(Action.Update, User),
+    message: 'Bạn không có quyền cập nhật User'
+  })
   @ResponseMessage("Update a User")
   update(
     @Body() updateUserDto: UpdateUserDto,
-    @User() user: IUser
+    @GetUser() user: IUser,
+    @Param('id') id: string
   ) {
-    const updateUser = this.userService.update(updateUserDto, user);
+    const updateUser = this.userService.update(id, updateUserDto, user);
     return updateUser;
   }
 
   @Delete(':id')
+  @CheckPolicies({
+    handle: (ability) => ability.can(Action.Delete, User),
+    message: 'Bạn không có quyền xóa User'
+  })
   @ResponseMessage("Delete a User")
   remove(
     @Param('id') id: string,
-    @User() user: IUser
+    @GetUser() user: IUser
   ) {
     return this.userService.remove(id, user);
   }

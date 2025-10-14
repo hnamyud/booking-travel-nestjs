@@ -3,9 +3,13 @@ import { PaymentsService } from './payments.service';
 import { PaymentsController } from './payments.controller';
 import { Payment, PaymentSchema } from './schemas/payment.schema';
 import { MongooseModule } from '@nestjs/mongoose';
+import { CaslModule } from 'src/casl/casl.module';
 
 @Module({
-  imports: [MongooseModule.forFeature([{ name: Payment.name, schema: PaymentSchema }])],
+  imports: [
+    MongooseModule.forFeature([{ name: Payment.name, schema: PaymentSchema }]),
+    CaslModule
+  ],
   controllers: [PaymentsController],
   providers: [PaymentsService]
 })

@@ -1,9 +1,16 @@
-import { IsArray, IsNotEmpty } from "class-validator";
+import { Type } from "class-transformer";
+import { IsArray, IsNotEmpty, IsOptional, ValidateNested } from "class-validator";
 import mongoose from "mongoose";
-export class CreateAttractionTicketDto {
-    @IsNotEmpty({ message: 'ID dịch vụ không được bỏ trống' })
-    service_id: mongoose.Schema.Types.ObjectId;
 
+class Image {
+    @IsNotEmpty({ message: 'URL không được bỏ trống' })
+    url: string;
+
+    @IsNotEmpty({ message: 'Public ID không được bỏ trống' })
+    public_id: string;
+}
+
+export class CreateAttractionTicketDto {
     @IsNotEmpty({ message: 'Tên điểm tham quan không được bỏ trống' })
     attraction_name: string;
 
@@ -21,6 +28,11 @@ export class CreateAttractionTicketDto {
 
     @IsNotEmpty({ message: 'Loại vé không được bỏ trống' })
     ticket_type: string;
+
+    @IsOptional()
+    @ValidateNested()
+    @Type(() => Image)
+    images?: Image[];
 
     @IsArray()
     @IsNotEmpty({ message: 'Phần bao gồm không được bỏ trống' })

@@ -13,29 +13,25 @@ export class AttractionTicketsService {
 
   async create(createAttractionTicketDto: CreateAttractionTicketDto) {
     const {
-      service_id,
       attraction_name,
       location,
       price,
       valid_from,
       valid_to,
       ticket_type,
+      images,
       includes
     } = createAttractionTicketDto;
 
-    if(!mongoose.Types.ObjectId.isValid(service_id.toString())) {
-      throw new BadRequestException('Invalid service_id');
-    }
-
     const newAttractionTicket = await this.attractionTicketModel.create({
-      service_id,
       attraction_name,
       location,
       price,
       ticket_type,
       valid_from,
       valid_to,
-      includes
+      includes,
+      images
     });
     return newAttractionTicket;
   }

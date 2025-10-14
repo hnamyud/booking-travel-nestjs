@@ -1,10 +1,7 @@
 import { IsArray, IsNotEmpty } from "class-validator";
 import mongoose from "mongoose";
 
-export class CreateHotelBookingDto {
-    @IsNotEmpty({ message: 'ID dịch vụ không được bỏ trống' })
-    service_id: mongoose.Schema.Types.ObjectId;
-
+export class CreateHotelBookingDto {    
     @IsNotEmpty({ message: 'Tên khách sạn không được bỏ trống' })
     hotel_name: string;
 

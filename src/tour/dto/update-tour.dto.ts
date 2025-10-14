@@ -20,8 +20,6 @@ class Review {
 }
 
 export class UpdateTourDto {
-    @IsNotEmpty({ message: 'ID không được bỏ trống' })
-    _id: string;
 
     @IsNotEmpty({message: 'Tên tour không được bỏ trống'})
     name: string;
@@ -54,5 +52,5 @@ export class UpdateTourDto {
     reviews?: Review[];
 
     @IsNotEmpty({message: 'Dịch vụ không được bỏ trống'})
-    service_id: mongoose.Schema.Types.ObjectId;
+    service_id?: mongoose.Schema.Types.ObjectId;
 }

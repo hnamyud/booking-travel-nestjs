@@ -1,8 +1,10 @@
-import { Controller, Delete, Param, Post, UploadedFiles, UseInterceptors } from '@nestjs/common';
+import { Controller, Delete, Param, Post, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
+import { PoliciesGuard } from 'src/auth/policy.guard';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
 @Controller('upload')
+@UseGuards(PoliciesGuard)
 export class UploadController {
   constructor(private readonly cloudinaryService: CloudinaryService) {}
 

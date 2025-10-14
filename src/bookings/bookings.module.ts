@@ -3,9 +3,13 @@ import { BookingsService } from './bookings.service';
 import { BookingsController } from './bookings.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Booking, BookingSchema } from './schemas/booking.schema';
+import { CaslModule } from 'src/casl/casl.module';
 
 @Module({
-  imports: [MongooseModule.forFeature([{ name: Booking.name, schema: BookingSchema }])],
+  imports: [
+    MongooseModule.forFeature([{ name: Booking.name, schema: BookingSchema }]),
+    CaslModule
+  ],
   controllers: [BookingsController],
   providers: [BookingsService]
 })

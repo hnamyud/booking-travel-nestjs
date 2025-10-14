@@ -13,7 +13,6 @@ export class FlightTicketsService {
 
   async create(createFlightTicketDto: CreateFlightTicketDto) {
     const {
-      service_id,
       airline,
       flight_number,
       departure,
@@ -22,11 +21,8 @@ export class FlightTicketsService {
       arrival_time,
       seat_class
     } = createFlightTicketDto;
-    if(!mongoose.Types.ObjectId.isValid(service_id.toString())) 
-      throw new BadRequestException('Invalid service_id');
 
     const newFlightTicket = await this.flightTicketModel.create({
-      service_id,
       airline,
       flight_number,
       departure,

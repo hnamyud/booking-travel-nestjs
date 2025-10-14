@@ -16,6 +16,7 @@ import { ServicesModule } from './services/services.module';
 import { FlightTicketsModule } from './flight-tickets/flight-tickets.module';
 import { HotelBookingsModule } from './hotel-bookings/hotel-bookings.module';
 import { AttractionTicketsModule } from './attraction-tickets/attraction-tickets.module';
+import { CaslModule } from './casl/casl.module';
 
 
 @Module({
@@ -46,6 +47,7 @@ import { AttractionTicketsModule } from './attraction-tickets/attraction-tickets
     FlightTicketsModule,
     HotelBookingsModule,
     AttractionTicketsModule,
+    CaslModule,
   ],
   controllers: [AppController],
   providers: [AppService],

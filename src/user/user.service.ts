@@ -141,10 +141,10 @@ export class UserService {
     }).select('-password'); // Loại trừ password
   }
 
-  async update(updateUserDto: UpdateUserDto, IUser: IUser) {
+  async update(id: string, updateUserDto: UpdateUserDto, IUser: IUser) {
     const updated = await this.userModel.updateOne(
       {
-        _id: updateUserDto._id
+        _id: id
       },
       {
         ...updateUserDto,
@@ -171,5 +171,15 @@ export class UserService {
     return this.userModel.softDelete({
       _id: id
     });
+  }
+
+  getProfile = async (user: IUser) => {
+    if(!user._id) {
+      throw new BadRequestException('Không có thông tin user');
+    }
+    const profileUser = await this.userModel.findOne({
+      _id: user._id
+    }).select('-password'); // Loại trừ password
+    return profileUser;
   }
 }
