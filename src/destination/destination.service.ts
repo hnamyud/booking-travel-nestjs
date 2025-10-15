@@ -51,7 +51,6 @@ export class DestinationService {
     const result = await this.destinationModel.find(filter)
       .skip(offset)
       .limit(defaultLimit)
-      .select('-password') // Loại trừ password
       // @ts-ignore: Unreachable code error
       .sort(sort)
       .populate(population)

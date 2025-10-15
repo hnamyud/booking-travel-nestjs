@@ -4,7 +4,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import { User, UserDocument } from './schema/user.schema';
-import { compareSync, genSaltSync, hashSync } from 'bcryptjs';
+import { compare, compareSync, genSaltSync, hashSync } from 'bcryptjs';
 import { IUser } from './user.interface';
 import mongoose from 'mongoose';
 import aqp from 'api-query-params';
@@ -47,7 +47,7 @@ export class UserService {
     if (isExisted) {
       throw new BadRequestException(`Email: ${email} đã tồn tại`);
     }
-    const hashPassword = this.gethashPassword(password);
+    const hashPassword = await this.gethashPassword(password);
     let newUser = await this.userModel.create({
       name,
       email,
@@ -79,12 +79,13 @@ export class UserService {
     if (isExisted) {
       throw new BadRequestException(`Email: ${email} đã tồn tại`);
     }
-    const birthDate = new Date(birthDay);                  
+    const birthDate = new Date(birthDay);     
+                
     if (Number.isNaN(birthDate.getTime())) {
       throw new BadRequestException('birthDay không hợp lệ (YYYY-MM-DD hoặc ISO-8601)');
     }
 
-    const hashPassword = this.gethashPassword(password);
+    const hashPassword = await this.gethashPassword(password);
 
     let user = await this.userModel.create({
       name,
@@ -142,7 +143,32 @@ export class UserService {
   }
 
   async update(id: string, updateUserDto: UpdateUserDto, IUser: IUser) {
-    const updated = await this.userModel.updateOne(
+    let updated;
+    if(!mongoose.Types.ObjectId.isValid(id)) {
+      throw new BadRequestException('User không tồn tại');
+    };
+
+    const user = await this.userModel.findOne({
+      _id: id
+    });
+
+    if(updateUserDto.old_password && updateUserDto.new_password) {
+      const isMatch = await compare(updateUserDto.old_password, user.password);
+      if(!isMatch) {
+        throw new BadRequestException('Mật khẩu cũ không đúng');
+      }
+      const hashNewPassword = await this.gethashPassword(updateUserDto.new_password);
+      updated = await this.userModel.updateOne(
+        {
+          _id: id
+        },
+        {
+          password: hashNewPassword
+        }
+      );
+      
+    } else {
+      updated = await this.userModel.updateOne(
       {
         _id: id
       },
@@ -153,12 +179,13 @@ export class UserService {
           email: IUser.email
         }
       });
+    }
     return updated;
   }
 
   async remove(id: string, IUser: IUser) {
     if(!mongoose.Types.ObjectId.isValid(id)) {
-      return `Not found user`;
+      throw new BadRequestException('User không tồn tại');
     }
     await this.userModel.updateOne({
         _id: id

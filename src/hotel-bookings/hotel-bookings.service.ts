@@ -45,7 +45,6 @@ export class HotelBookingsService {
     const result = await this.hotelBookingModel.find(filter)
       .skip(offset)
       .limit(defaultLimit)
-      .select('-password') // Loại trừ password
       // @ts-ignore: Unreachable code error
       .sort(sort)
       .populate(population)

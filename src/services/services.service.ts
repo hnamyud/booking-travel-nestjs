@@ -48,7 +48,6 @@ export class ServicesService {
     let query = this.serviceModel.find(filter)
       .skip(offset)
       .limit(defaultLimit)
-      .select('-password')
       // @ts-ignore: Unreachable code error
       .sort(sort);
     if (serviceType === 'FlightTicket') {

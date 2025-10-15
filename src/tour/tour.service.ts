@@ -66,7 +66,6 @@ export class TourService {
     const result = await this.tourModel.find(filter)
       .skip(offset)
       .limit(defaultLimit)
-      .select('-password') // Loại trừ password
       // @ts-ignore: Unreachable code error
       .sort(sort)
       .populate(population)
