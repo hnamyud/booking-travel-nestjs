@@ -52,12 +52,14 @@ export class UserController {
     return this.userService.findOne(id);
   }
 
+  // Get user profile (Use POST)
   @Post('profile')
   @ResponseMessage("Fetch user profile")
   getProfile(@GetUser() user: IUser) {
     return this.userService.getProfile(user);
   }
 
+  // Update user info
   @Patch(':id')
   @CheckPolicies({
     handle: (ability) => ability.can(Action.Update, User),
@@ -71,6 +73,21 @@ export class UserController {
   ) {
     const updateUser = this.userService.update(id, updateUserDto, user);
     return updateUser;
+  }
+
+  // Update user role
+  @Patch(':id/role')
+  @CheckPolicies({
+    handle: (ability) => ability.can(Action.Manage, User),
+    message: 'Chỉ admin mới có quyền thay đổi role'
+  })
+  @ResponseMessage('Update user role successfully')
+  async updateRole(
+    @Param('id') id: string,
+    @Body('role') role: string,
+    @GetUser() user: IUser
+  ) {
+    return this.userService.updateRole(id, role, user);
   }
 
   @Delete(':id')

@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { Type } from "class-transformer";
-import { IsNotEmpty, IsOptional, ValidateNested } from "class-validator";
+import { IsEnum, IsNotEmpty, IsOptional, ValidateNested } from "class-validator";
+import { TagType } from 'src/enum/tag-type.enum';
 
 class Image {
     @IsNotEmpty({ message: 'URL không được bỏ trống' })
@@ -8,17 +9,6 @@ class Image {
 
     @IsNotEmpty({ message: 'Public ID không được bỏ trống' })
     public_id: string;
-}
-
-class Tour {
-    @IsNotEmpty({ message: 'ID không được bỏ trống' })
-    _id: mongoose.Schema.Types.ObjectId;
-
-    @IsNotEmpty({ message: 'Tên tour không được bỏ trống' })
-    name: string;
-
-    @IsNotEmpty({ message: 'Giá tour không được bỏ trống' })
-    price: number;
 }
 
 export class CreateDestinationDto {
@@ -31,13 +21,12 @@ export class CreateDestinationDto {
     @IsNotEmpty({ message: 'Mô tả không được bỏ trống' })
     description: string;
 
+    @IsEnum(TagType, { each: true })
+    @IsOptional()
+    tags?: TagType[];
+
     @IsOptional()
     @ValidateNested()
     @Type(() => Image)
     images?: Image[];
-    
-    @IsOptional()
-    @ValidateNested()
-    @Type(() => Tour)
-    tours?: Tour[];
 }

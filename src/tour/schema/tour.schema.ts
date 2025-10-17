@@ -26,7 +26,7 @@ export class Tour {
     @Prop()
     isAvailable: boolean;
 
-    @Prop({ type: Object })
+    @Prop({ type: Object, ref: 'Destination' })
     destinations: {
         _id: mongoose.Schema.Types.ObjectId;
         name: string;

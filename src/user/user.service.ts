@@ -209,4 +209,19 @@ export class UserService {
     }).select('-password'); // Loại trừ password
     return profileUser;
   }
+
+  updateRole = async(id: string, role: string, admin: IUser) => {
+    if(!mongoose.Types.ObjectId.isValid(id)) {
+      throw new BadRequestException('User không tồn tại');
+    }
+    return await this.userModel.updateOne({
+      _id: id
+    }, {
+      role,
+      updatedBy: {
+        _id: admin._id,
+        email: admin.email
+      }
+    });
+  }
 }

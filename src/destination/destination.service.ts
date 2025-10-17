@@ -16,7 +16,7 @@ export class DestinationService {
   ) {}
 
   async create(createDestinationDto: CreateDestinationDto) {
-    const { name, country, description, images } = createDestinationDto;
+    const { name, country, description, tags, images } = createDestinationDto;
 
     // Upload file lên Cloudinary
     // const uploadPromises = files.map(async file =>  await this.cloudinaryService.uploadFile(file));
@@ -32,6 +32,7 @@ export class DestinationService {
       name,
       country,
       description,
+      tags,
       images
     });
     
