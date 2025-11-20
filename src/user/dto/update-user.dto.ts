@@ -33,3 +33,4 @@ export class UpdateUserDto extends PartialType(OmitType(CreateUserDto, ['passwor
     @IsOptional()
     new_password: string;
 }
+

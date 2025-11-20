@@ -224,4 +224,38 @@ export class UserService {
       }
     });
   }
+
+  async changePassword(object: IUser, oldPassword: string, newPassword: string) {
+    if (!mongoose.Types.ObjectId.isValid(object._id)) {
+      throw new BadRequestException('User không tồn tại 1');
+    }
+
+    const user = await this.userModel.findOne({ _id: object._id });
+    if (!user) {
+      throw new BadRequestException('User không tồn tại 2');
+    }
+
+    // Kiểm tra mật khẩu cũ
+    const isMatch = await compare(oldPassword, user.password);
+    if (!isMatch) {
+      throw new BadRequestException('Mật khẩu cũ không đúng');
+    }
+
+    // Kiểm tra mật khẩu mới có khác mật khẩu cũ không
+    const isSamePassword = await compare(newPassword, user.password);
+    if (isSamePassword) {
+      throw new BadRequestException('Mật khẩu mới không được giống mật khẩu cũ');
+    }
+
+    const hashNewPassword = this.gethashPassword(newPassword);
+
+    return await this.userModel.updateOne(
+      { 
+        _id: object._id 
+      },
+      { 
+        password: hashNewPassword 
+      }
+    );
+  }
 }

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, BadRequestException } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -8,6 +8,7 @@ import { CheckPolicies } from 'src/decorator/policy.decorator';
 import { Action } from 'src/enum/action.enum';
 import { User } from './schema/user.schema';
 import { PoliciesGuard } from 'src/auth/policy.guard';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Controller('user')
 @UseGuards(PoliciesGuard)
@@ -59,20 +60,28 @@ export class UserController {
     return this.userService.getProfile(user);
   }
 
-  // Update user info
-  @Patch(':id')
+  @Patch('change-password')
   @CheckPolicies({
     handle: (ability) => ability.can(Action.Update, User),
-    message: 'Bạn không có quyền cập nhật User'
+    message: 'Bạn không có quyền thay đổi mật khẩu'
   })
-  @ResponseMessage("Update a User")
-  update(
-    @Body() updateUserDto: UpdateUserDto,
-    @GetUser() user: IUser,
-    @Param('id') id: string
+  @ResponseMessage('Change password successfully')
+  async changePassword(
+    @Body() changePasswordDto: ChangePasswordDto,
+    @GetUser() user: IUser
   ) {
-    const updateUser = this.userService.update(id, updateUserDto, user);
-    return updateUser;
+    // Kiểm tra confirm password
+    if (changePasswordDto.newPassword !== changePasswordDto.confirmPassword) {
+      throw new BadRequestException('Mật khẩu mới và xác nhận mật khẩu không khớp');
+    }
+
+    const id = user._id;
+
+    return this.userService.changePassword(
+      user,
+      changePasswordDto.oldPassword,
+      changePasswordDto.newPassword
+    );
   }
 
   // Update user role
@@ -88,6 +97,22 @@ export class UserController {
     @GetUser() user: IUser
   ) {
     return this.userService.updateRole(id, role, user);
+  }
+
+  // Update user info
+  @Patch(':id')
+  @CheckPolicies({
+    handle: (ability) => ability.can(Action.Update, User),
+    message: 'Bạn không có quyền cập nhật User'
+  })
+  @ResponseMessage("Update a User")
+  update(
+    @Body() updateUserDto: UpdateUserDto,
+    @GetUser() user: IUser,
+    @Param('id') id: string
+  ) {
+    const updateUser = this.userService.update(id, updateUserDto, user);
+    return updateUser;
   }
 
   @Delete(':id')
