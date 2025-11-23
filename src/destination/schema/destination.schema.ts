@@ -1,6 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import mongoose, { HydratedDocument } from "mongoose";
-import { TagType } from 'src/enum/tag-type.enum';
 
 export type DestinationDocument = HydratedDocument<Destination>;
 @Schema({ timestamps: true })
@@ -13,13 +12,6 @@ export class Destination {
 
     @Prop()
     description: string;
-
-    @Prop({ 
-        type: [String],
-        enum: Object.values(TagType), 
-        default: [], 
-    })
-    tags: TagType[];
 
     @Prop({ type: Object })
     images: {

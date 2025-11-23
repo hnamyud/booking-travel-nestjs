@@ -1,7 +1,6 @@
 import mongoose from 'mongoose';
 import { Type } from "class-transformer";
 import { IsEnum, IsNotEmpty, IsOptional, ValidateNested } from "class-validator";
-import { TagType } from 'src/enum/tag-type.enum';
 
 class Image {
     @IsNotEmpty({ message: 'URL không được bỏ trống' })
@@ -20,10 +19,6 @@ export class CreateDestinationDto {
 
     @IsNotEmpty({ message: 'Mô tả không được bỏ trống' })
     description: string;
-
-    @IsEnum(TagType, { each: true })
-    @IsOptional()
-    tags?: TagType[];
 
     @IsOptional()
     @ValidateNested()

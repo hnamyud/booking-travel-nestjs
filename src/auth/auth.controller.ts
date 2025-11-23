@@ -61,6 +61,12 @@ export class AuthController {
     return this.authService.logout(req.user, response);
   }
 
+  @Post('/verify-admin')
+  @ResponseMessage('Verify admin access')
+  async verifyAdmin(@GetUser() user: IUser) {
+    return this.authService.verifyAdminAccess(user);
+  }
+
   @Post('/verify-otp')
   @Public()
   @ResponseMessage("Verify OTP")

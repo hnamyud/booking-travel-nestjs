@@ -1,5 +1,5 @@
 import { VerifyOtpDto, ResetPasswordDto } from './dto/reset-password.dto';
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import ms from 'ms';
@@ -130,6 +130,44 @@ export class AuthService {
     }
   }
 
+  // Verify quyền ADMIN cho các route cần thiết
+  verifyAdminAccess = async (iuser: IUser) => {
+    if (iuser.role !== 'ADMIN') {
+      throw new ForbiddenException('Bạn không có quyền truy cập trang quản trị');
+    }
+
+    const adminPermissions = this.getPermissionsByRole(iuser.role);
+
+    return {
+      verified: true,
+      admin: {
+        _id: iuser._id,
+        name: iuser.name,
+        email: iuser.email,
+        role: iuser.role,
+      },
+      permissions: adminPermissions,
+      timestamp: new Date(),
+    };
+  }
+
+  // Helper lấy permissions theo role
+  private getPermissionsByRole(role: string): string[] {
+    const rolePermissions = {
+      ADMIN: [
+        'user:read_all',
+        'user:create',
+        'user:update',
+        'user:delete',
+        'booking:manage',
+        'payment:manage',
+        'system:settings',
+      ],
+      USER: ['booking:own', 'profile:edit'],
+    };
+    return rolePermissions[role] || [];
+  }
+
   // Verify OTP dùng cho quên mật khẩu
   verifyOtpOnly = async (email: string, otp: string) => {
     const redisKey = `reset_otp:${email}`;
@@ -147,7 +185,7 @@ export class AuthService {
     if (!storedOtp) {
       throw new BadRequestException('Invalid OTP or OTP has expired!');
     }
-    if(storedOtp !== otp){
+    if (storedOtp !== otp) {
       // Tăng số lần thử
       await this.redisClient.incr(attemptsKey);
 
@@ -165,15 +203,15 @@ export class AuthService {
   resetPassword = async (resetPasswordDto: ResetPasswordDto) => {
     // Kiểm tra OTP và limit thử
     await this.verifyOtpOnly(resetPasswordDto.email, resetPasswordDto.otp);
-    
+
     const redisKey = `reset_otp:${resetPasswordDto.email}`;
-    
+
     const user = await this.userService.findOneByEmail(resetPasswordDto.email);
     if (!user) {
       // Case hiếm: Có OTP trong Redis nhưng User lại bị xóa khỏi DB rồi
       throw new BadRequestException('Người dùng không tồn tại.');
     }
-    const hashPassword = await this.userService.getHashPassword(resetPasswordDto.newPassword);  
+    const hashPassword = await this.userService.getHashPassword(resetPasswordDto.newPassword);
     await this.userService.updateUserPassword(resetPasswordDto.email, hashPassword);
     // Xoá OTP sau khi đổi mật khẩu thành công
     await this.redisClient.del(redisKey);

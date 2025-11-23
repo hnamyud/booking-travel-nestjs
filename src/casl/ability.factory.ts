@@ -32,34 +32,36 @@ export class CaslAbilityFactory {
       cannot(Action.Delete, User, { role: 'ADMIN' });
     } else {
       // User thường
-      can(Action.Create, [
+      // User chỉ có thể create/update/delete booking của chính họ
+      can([
+        Action.Create,
+        Action.Update,
+        Action.Delete,
+        Action.Read,
+      ], [
         Booking, 
-        Review
-      ], { user_id: (user as any)._id });
+      ], { user_id: user._id });
 
-      can(Action.Update, [      
-        Review, 
-        Booking
-      ], { user_id: (user as any)._id });
+      can(Action.Update, User, { _id: user._id });
 
-      can(Action.Update, User);
+      can(Action.Read, [Destination, Tour, Review]);
+      can([Action.Read, Action.Read_All], Tour, { isAvailable: true });
+      can([Action.Read, Action.Read_All], Destination);
+      can([
+        Action.Read, 
+        Action.Read_All, 
+      ], Review);
+      can([ 
+        Action.Create, 
+        Action.Update, 
+        Action.Delete
+      ], Review, { user_id: user._id });
 
-      can(Action.Read, [
-        Destination, 
-        Review, 
-        Payment, 
-        Tour, 
-        Booking, 
-        User
-      ]);
-      
-      can(Action.Read_All, [Review]);
+      can([Action.Read, Action.Create], Payment, { user_id: user._id });
       // User chỉ có thể xem thông tin của chính họ
-      can(Action.Read, User);
-
-      // User chỉ có thể update/delete booking của chính họ
-      can(Action.Delete, [Booking, Review], { user_id: (user as any)._id });
-      can(Action.Delete, User);
+      can(Action.Read, User, { _id: user._id });
+      
+      can(Action.Delete, User, { _id: user._id });
       cannot(Action.Delete, User, { role: 'ADMIN' })
     }
 
