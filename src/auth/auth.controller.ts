@@ -1,16 +1,20 @@
-import { Controller, Post, UseGuards, Req, Body, Res, Get } from '@nestjs/common';
+import { Controller, Post, UseGuards, Req, Body, Res, Get, BadRequestException } from '@nestjs/common';
 import { Public, ResponseMessage, GetUser } from 'src/decorator/customize.decorator';
 import { LocalAuthGuard } from 'src/local-auth.guard';
 import { AuthService } from './auth.service';
 import { RegisterUserDto } from 'src/user/dto/create-user.dto';
 import { Response, Request } from 'express';
 import { IUser } from 'src/user/user.interface';
+import { Verify } from 'crypto';
+import { ResetPasswordDto, VerifyOtpDto } from './dto/reset-password.dto';
+import { UserService } from 'src/user/user.service';
 
 
 @Controller('auth')
 export class AuthController {
   constructor(
-    private authService: AuthService, 
+    private authService: AuthService,
+    private userService: UserService
   ) {}
 
   @Public()
@@ -34,7 +38,7 @@ export class AuthController {
   @Get('/account')
   @ResponseMessage("Get user information")
   handleGetAccount(@GetUser() user: IUser) {
-    return { user };
+    return this.userService.getProfile(user);
   }
 
   @Get('/refresh')
@@ -55,5 +59,23 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response
   ) {
     return this.authService.logout(req.user, response);
+  }
+
+  @Post('/verify-otp')
+  @Public()
+  @ResponseMessage("Verify OTP")
+  async verifyOtp(@Body() verifyOtpDto: VerifyOtpDto) {
+    const isValid = await this.authService.verifyOtpOnly(verifyOtpDto.email, verifyOtpDto.otp); 
+    if (!isValid) throw new BadRequestException('Invalid OTP or OTP has expired!');
+    return { message: 'Success!' };
+  }
+
+  @Post('/reset-password')
+  @Public()
+  @ResponseMessage("Reset password")
+  async handleResetPassword(
+    @Body() resetPasswordDto: ResetPasswordDto
+  ) {
+    return await this.authService.resetPassword(resetPasswordDto);
   }
 }

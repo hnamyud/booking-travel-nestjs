@@ -4,9 +4,6 @@ import mongoose, { HydratedDocument } from "mongoose";
 export type UserDocument = HydratedDocument<User>;
 @Schema({ timestamps: true })
 export class User {
-    @Prop({ type: mongoose.Schema.Types.ObjectId })
-    _id: mongoose.Schema.Types.ObjectId;
-
     @Prop()
     name: string;
 
@@ -34,7 +31,7 @@ export class User {
     @Prop()
     createdAt: Date;
 
-    @Prop({ type: Object }) 
+    @Prop({ type: Object })
     createdBy: {
         _id: mongoose.Schema.Types.ObjectId;
         email: string;

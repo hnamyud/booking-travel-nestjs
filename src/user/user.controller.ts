@@ -53,13 +53,6 @@ export class UserController {
     return this.userService.findOne(id);
   }
 
-  // Get user profile (Use POST)
-  @Post('profile')
-  @ResponseMessage("Fetch user profile")
-  getProfile(@GetUser() user: IUser) {
-    return this.userService.getProfile(user);
-  }
-
   @Patch('change-password')
   @CheckPolicies({
     handle: (ability) => ability.can(Action.Update, User),

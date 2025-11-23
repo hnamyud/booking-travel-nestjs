@@ -25,12 +25,5 @@ export class UpdateUserDto extends PartialType(OmitType(CreateUserDto, ['passwor
     @IsOptional()
     address: string;
     
-    @IsString({message: 'Password phải là chuỗi ký tự'})
-    @IsOptional()
-    old_password: string;
-
-    @IsString({message: 'Password phải là chuỗi ký tự'})
-    @IsOptional()
-    new_password: string;
 }
 

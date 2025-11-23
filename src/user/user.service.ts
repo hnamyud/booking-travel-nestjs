@@ -13,7 +13,7 @@ import aqp from 'api-query-params';
 export class UserService {
   constructor(@InjectModel(User.name) private userModel: SoftDeleteModel<UserDocument>) {}
 
-  gethashPassword = (password: string) => {
+  getHashPassword = (password: string) => {
     const salt = genSaltSync(10);
     const hash = hashSync(password, salt);
     return hash;
@@ -47,12 +47,14 @@ export class UserService {
     if (isExisted) {
       throw new BadRequestException(`Email: ${email} đã tồn tại`);
     }
-    const hashPassword = await this.gethashPassword(password);
+    const birthDate = new Date(birthDay);     
+    birthDate.setHours(birthDate.getHours() + 12);
+    const hashPassword = await this.getHashPassword(password);
     let newUser = await this.userModel.create({
       name,
       email,
       password: hashPassword,
-      birthDay,
+      birthDay: birthDate,
       gender,
       address,
       role: 'USER',
@@ -80,12 +82,13 @@ export class UserService {
       throw new BadRequestException(`Email: ${email} đã tồn tại`);
     }
     const birthDate = new Date(birthDay);     
+    birthDate.setHours(birthDate.getHours() + 12);
                 
     if (Number.isNaN(birthDate.getTime())) {
       throw new BadRequestException('birthDay không hợp lệ (YYYY-MM-DD hoặc ISO-8601)');
     }
 
-    const hashPassword = await this.gethashPassword(password);
+    const hashPassword = await this.getHashPassword(password);
 
     let user = await this.userModel.create({
       name,
@@ -147,39 +150,24 @@ export class UserService {
     if(!mongoose.Types.ObjectId.isValid(id)) {
       throw new BadRequestException('User không tồn tại');
     };
+    const birthDate = new Date(updateUserDto.birthDay);     
+    birthDate.setHours(birthDate.getHours() + 12);
 
-    const user = await this.userModel.findOne({
-      _id: id
-    });
-
-    if(updateUserDto.old_password && updateUserDto.new_password) {
-      const isMatch = await compare(updateUserDto.old_password, user.password);
-      if(!isMatch) {
-        throw new BadRequestException('Mật khẩu cũ không đúng');
-      }
-      const hashNewPassword = await this.gethashPassword(updateUserDto.new_password);
-      updated = await this.userModel.updateOne(
-        {
-          _id: id
-        },
-        {
-          password: hashNewPassword
-        }
-      );
-      
-    } else {
-      updated = await this.userModel.updateOne(
+    updated = await this.userModel.updateOne(
       {
         _id: id
       },
       {
-        ...updateUserDto,
+        name: updateUserDto.name,
+        email: updateUserDto.email,
+        birthDay: birthDate,
+        gender: updateUserDto.gender,
+        address: updateUserDto.address,
         updatedBy: {
           _id: IUser._id,
           email: IUser.email
         }
       });
-    }
     return updated;
   }
 
@@ -247,7 +235,7 @@ export class UserService {
       throw new BadRequestException('Mật khẩu mới không được giống mật khẩu cũ');
     }
 
-    const hashNewPassword = this.gethashPassword(newPassword);
+    const hashNewPassword = this.getHashPassword(newPassword);
 
     return await this.userModel.updateOne(
       { 
@@ -255,6 +243,21 @@ export class UserService {
       },
       { 
         password: hashNewPassword 
+      }
+    );
+  }
+
+  findOneByEmail = async(email: string) => {
+    return await this.userModel.findOne({ email });
+  }
+
+  updateUserPassword = async(email: string, password: string) => {
+    return await this.userModel.updateOne(
+      { 
+        email: email 
+      }, 
+      { 
+        password: password 
       }
     );
   }

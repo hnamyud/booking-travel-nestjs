@@ -13,7 +13,9 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { PaymentsModule } from './payments/payments.module';
 import { BookingsModule } from './bookings/bookings.module';
 import { CaslModule } from './casl/casl.module';
-import { DateModule } from './date/date.module';
+import { MailModule } from './mail/mail.module';
+import { RedisModule } from './redis/redis.module';
+import { MailerModule } from '@nestjs-modules/mailer';
 
 
 @Module({
@@ -41,7 +43,9 @@ import { DateModule } from './date/date.module';
     PaymentsModule,
     BookingsModule,
     CaslModule,
-    DateModule,
+    MailModule,
+    RedisModule
+
   ],
   controllers: [AppController],
   providers: [AppService],

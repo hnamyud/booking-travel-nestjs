@@ -42,7 +42,7 @@ export class CaslAbilityFactory {
         Booking
       ], { user_id: (user as any)._id });
 
-      can(Action.Update, User, { _id: (user as any)._id });
+      can(Action.Update, User);
 
       can(Action.Read, [
         Destination, 
@@ -55,11 +55,11 @@ export class CaslAbilityFactory {
       
       can(Action.Read_All, [Review]);
       // User chỉ có thể xem thông tin của chính họ
-      can(Action.Read, User, { _id: (user as any)._id });
+      can(Action.Read, User);
 
       // User chỉ có thể update/delete booking của chính họ
       can(Action.Delete, [Booking, Review], { user_id: (user as any)._id });
-      can(Action.Delete, User, { _id: (user as any)._id });
+      can(Action.Delete, User);
       cannot(Action.Delete, User, { role: 'ADMIN' })
     }
 

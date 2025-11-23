@@ -1,0 +1,2 @@
+test/app.e2e-spec.ts(19,12): error TS2349: This expression is not callable.
+  Type 'typeof supertest' has no call signatures.
