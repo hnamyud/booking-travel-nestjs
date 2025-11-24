@@ -13,20 +13,11 @@ export class DestinationService {
   constructor(
     @InjectModel(Destination.name) private destinationModel: SoftDeleteModel<DestinationDocument>,
     private cloudinaryService: CloudinaryService
-  ) {}
+  ) { }
 
   async create(createDestinationDto: CreateDestinationDto) {
     const { name, country, description, images } = createDestinationDto;
 
-    // Upload file lên Cloudinary
-    // const uploadPromises = files.map(async file =>  await this.cloudinaryService.uploadFile(file));
-    // const uploadResults = await Promise.all(uploadPromises);
-
-    // const images = uploadResults.map(result => ({
-    //   url: result.secure_url,
-    //   public_id: result.public_id
-    // }));
-    //
     // Tạo destination mới với URL và public_id từ Cloudinary
     const newDestination = await this.destinationModel.create({
       name,
@@ -34,7 +25,7 @@ export class DestinationService {
       description,
       images
     });
-    
+
     return newDestination;
   }
 
@@ -56,7 +47,7 @@ export class DestinationService {
       .populate(population)
       .exec();
     return {
-      meta: { 
+      meta: {
         current: currentPage, //trang hiện tại
         pageSize: limit, //số lượng bản ghi đã lấy
         pages: totalPages,  //tổng số trang với điều kiện query
@@ -67,7 +58,7 @@ export class DestinationService {
   }
 
   async findOne(id: string) {
-    if(!mongoose.Types.ObjectId.isValid(id)) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return `Not found destination`;
     };
     return await this.destinationModel.findOne({
@@ -76,7 +67,7 @@ export class DestinationService {
   }
 
   async update(id: string, updateDestinationDto: UpdateDestinationDto) {
-    const {...updateData } = updateDestinationDto;
+    const { ...updateData } = updateDestinationDto;
 
     // Validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -91,11 +82,45 @@ export class DestinationService {
   }
 
   async remove(id: string) {
-    if(!mongoose.Types.ObjectId.isValid(id)) {
-          throw new BadRequestException(`Not found destination`);
-        }
-    return this.destinationModel.softDelete({
-      _id: id
-    });
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      throw new BadRequestException(`Not found destination`);
+    }
+
+    const destination = await this.destinationModel.findById(id);
+
+    if (!destination) {
+      throw new NotFoundException('Destination không tồn tại');
+    }
+    if (destination.images && destination.images.length > 0) {
+    try {
+      const deletePromises = destination.images.map(image => 
+        this.cloudinaryService.deleteImage(image.public_id)
+      );
+      
+      const results = await Promise.allSettled(deletePromises);
+      
+      // Log kết quả
+      const successCount = results.filter(r => r.status === 'fulfilled').length;
+      const failCount = results.filter(r => r.status === 'rejected').length;
+      
+      console.log(`✅ Đã xóa ${successCount}/${destination.images.length} ảnh`);
+      
+      if (failCount > 0) {
+        console.warn(`⚠️ Không xóa được ${failCount} ảnh`);
+      }
+    } catch (error) {
+      console.error('Lỗi khi xóa ảnh:', error);
+      // Có thể throw error hoặc tiếp tục xóa destination
+      // throw new BadRequestException('Không thể xóa ảnh');
+    }
+  }
+
+  // ✅ Bước 3: Soft delete destination
+  const result = await this.destinationModel.softDelete({ _id: id });
+  
+  return {
+    deleted: result.deleted,
+    message: 'Xóa destination và ảnh thành công'
+  };
   }
 }

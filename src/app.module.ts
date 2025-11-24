@@ -45,7 +45,6 @@ import { MailerModule } from '@nestjs-modules/mailer';
     CaslModule,
     MailModule,
     RedisModule
-
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -2,6 +2,11 @@ import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import mongoose, { HydratedDocument } from "mongoose";
 
 export type DestinationDocument = HydratedDocument<Destination>;
+
+export interface CloudinaryImage {
+  url: string;
+  public_id: string;
+}
 @Schema({ timestamps: true })
 export class Destination {
     @Prop()
@@ -13,11 +18,11 @@ export class Destination {
     @Prop()
     description: string;
 
-    @Prop({ type: Object })
-    images: {
-        url: string;
-        public_id: string;
-    };
+    @Prop({ 
+      type: [{ url: String, public_id: String }], // ✅ Array of objects
+      required: true 
+    })
+    images: CloudinaryImage[];
 
     @Prop()
     createdAt: Date;
