@@ -9,7 +9,10 @@ import { Action } from 'src/enum/action.enum';
 import { User } from './schema/user.schema';
 import { PoliciesGuard } from 'src/auth/policy.guard';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
+import { UpdateRoleDto } from './dto/update-user-role.dto';
 
+@ApiTags('User')
 @Controller('user')
 @UseGuards(PoliciesGuard)
 export class UserController {
@@ -20,7 +23,9 @@ export class UserController {
     handle: (ability) => ability.can(Action.Create, User),
     message: 'Bạn không có quyền tạo mới User'
   })
+  @ApiBearerAuth('access-token')
   @ResponseMessage("Create a new User")
+  @ApiBody({ type: CreateUserDto })
   async create(
     @Body() createUserDto: CreateUserDto, 
     @GetUser() iuser: IUser
@@ -37,6 +42,7 @@ export class UserController {
     handle: (ability) => ability.can(Action.Read_All, User),
     message: 'Bạn không có quyền xem tất cả danh sách User'
   })
+  @ApiBearerAuth('access-token')
   @ResponseMessage("Fetch user with paginate")
   findAll(
     @Query('current') currentPage: string, 
@@ -49,8 +55,11 @@ export class UserController {
   @Public()
   @ResponseMessage("Fetch user by id")
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.userService.findOne(id);
+  findOne(
+    @Param('id') id: string,
+    @GetUser() requestUser?: IUser
+  ) {
+    return this.userService.findOne(id, requestUser);
   }
 
   @Patch('change-password')
@@ -58,6 +67,8 @@ export class UserController {
     handle: (ability) => ability.can(Action.Update, User),
     message: 'Bạn không có quyền thay đổi mật khẩu'
   })
+  @ApiBearerAuth('access-token')
+  @ApiBody({ type: ChangePasswordDto })
   @ResponseMessage('Change password successfully')
   async changePassword(
     @Body() changePasswordDto: ChangePasswordDto,
@@ -78,18 +89,19 @@ export class UserController {
   }
 
   // Update user role
-  @Patch(':id/role')
+  @Patch('role/:id')
   @CheckPolicies({
     handle: (ability) => ability.can(Action.Manage, User),
     message: 'Chỉ admin mới có quyền thay đổi role'
   })
+  @ApiBearerAuth('access-token')
   @ResponseMessage('Update user role successfully')
   async updateRole(
     @Param('id') id: string,
-    @Body('role') role: string,
+    @Body() updateRoleDto: UpdateRoleDto,
     @GetUser() user: IUser
   ) {
-    return this.userService.updateRole(id, role, user);
+    return this.userService.updateRole(id, updateRoleDto, user);
   }
 
   // Update user info
@@ -98,6 +110,8 @@ export class UserController {
     handle: (ability) => ability.can(Action.Update, User),
     message: 'Bạn không có quyền cập nhật User'
   })
+  @ApiBearerAuth('access-token')
+  @ApiBody({ type: UpdateUserDto })
   @ResponseMessage("Update a User")
   update(
     @Body() updateUserDto: UpdateUserDto,
@@ -113,6 +127,7 @@ export class UserController {
     handle: (ability) => ability.can(Action.Delete, User),
     message: 'Bạn không có quyền xóa User'
   })
+  @ApiBearerAuth('access-token')
   @ResponseMessage("Delete a User")
   remove(
     @Param('id') id: string,

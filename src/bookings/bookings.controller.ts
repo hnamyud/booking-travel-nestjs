@@ -8,7 +8,9 @@ import { PoliciesGuard } from 'src/auth/policy.guard';
 import { CheckPolicies } from 'src/decorator/policy.decorator';
 import { Action } from 'src/enum/action.enum';
 import { Booking } from './schemas/booking.schema';
+import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Bookings')
 @Controller('bookings')
 @UseGuards(PoliciesGuard)
 export class BookingsController {
@@ -19,6 +21,8 @@ export class BookingsController {
     handle: (ability) => ability.can(Action.Create, Booking),
     message: 'Bạn không có quyền tạo mới Booking'
   })
+  @ApiBearerAuth('access-token')
+  @ApiBody({ type: CreateBookingDto })
   @ResponseMessage('Create a new Booking')
   async create(
     @Body() createBookingDto: CreateBookingDto,
@@ -32,6 +36,7 @@ export class BookingsController {
   }
 
   @Get()
+  @ApiBearerAuth('access-token')
   @CheckPolicies({ 
     handle: (ability) => ability.can(Action.Read_All, Booking),
     message: 'Bạn không có quyền xem tất cả danh sách Booking'
@@ -46,6 +51,7 @@ export class BookingsController {
   }
 
   @Get(':id')
+  @ApiBearerAuth('access-token')
   @CheckPolicies({ 
     handle: (ability) => ability.can(Action.Read, Booking),
     message: 'Bạn không có quyền xem danh sách Booking'
@@ -60,6 +66,8 @@ export class BookingsController {
     handle: (ability) => ability.can(Action.Update, Booking),
     message: 'Bạn không có quyền cập nhật Booking'
   })
+  @ApiBearerAuth('access-token')
+  @ApiBody({ type: UpdateBookingDto })
   @ResponseMessage('Update a Booking')
   update(@Param('id') id: string, @Body() updateBookingDto: UpdateBookingDto) {
     return this.bookingsService.update(id, updateBookingDto);
@@ -70,6 +78,7 @@ export class BookingsController {
     handle: (ability) => ability.can(Action.Delete, Booking),
     message: 'Bạn không có quyền xóa Booking'
   })
+  @ApiBearerAuth('access-token')
   @ResponseMessage('Delete a Booking')
   remove(@Param('id') id: string) {
     return this.bookingsService.remove(id);

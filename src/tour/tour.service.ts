@@ -34,8 +34,7 @@ export class TourService {
       timeEnd,
       isAvailable,
       destinations,
-      reviews,
-      service_id
+      reviews
     } = createTourDto;
 
     const newTour = await this.tourModel.create({
@@ -47,8 +46,7 @@ export class TourService {
       timeEnd,
       isAvailable,
       destinations,
-      reviews,
-      service_id
+      reviews
     });
     return newTour;
   }

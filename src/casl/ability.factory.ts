@@ -7,6 +7,7 @@ import { Booking } from 'src/bookings/schemas/booking.schema';
 import { Destination } from 'src/destination/schema/destination.schema';
 import { Review } from 'src/review/schema/review.schema';
 import { Payment } from 'src/payments/schemas/payment.schema';
+import { UserRole } from 'src/enum/role.enum';
 // Định nghĩa các subject (đối tượng) được phân quyền
 export type Subjects = InferSubjects<
     typeof User | 
@@ -26,10 +27,10 @@ export class CaslAbilityFactory {
       Ability<[Action, Subjects]>
     >(Ability as AbilityClass<AppAbility>);
 
-    if (user.role === 'ADMIN') {
+    if (user.role === UserRole.Admin) {
       // Admin có thể làm mọi thứ
       can(Action.Manage, 'all'); 
-      cannot(Action.Delete, User, { role: 'ADMIN' });
+      cannot(Action.Delete, User, { role: UserRole.Admin });
     } else {
       // User thường
       // User chỉ có thể create/update/delete booking của chính họ
@@ -62,7 +63,7 @@ export class CaslAbilityFactory {
       can(Action.Read, User, { _id: user._id });
       
       can(Action.Delete, User, { _id: user._id });
-      cannot(Action.Delete, User, { role: 'ADMIN' })
+      cannot(Action.Delete, User, { role: UserRole.Admin })
     }
 
     return build({

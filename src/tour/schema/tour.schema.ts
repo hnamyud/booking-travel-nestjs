@@ -41,9 +41,6 @@ export class Tour {
     };
 
     @Prop()
-    service_id: mongoose.Schema.Types.ObjectId;
-
-    @Prop()
     createdAt: Date;
 
     @Prop()

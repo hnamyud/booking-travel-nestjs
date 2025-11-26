@@ -8,8 +8,10 @@ import { IUser } from 'src/user/user.interface';
 import { Verify } from 'crypto';
 import { ResetPasswordDto, VerifyOtpDto } from './dto/reset-password.dto';
 import { UserService } from 'src/user/user.service';
+import { ApiBearerAuth, ApiBody, ApiProperty, ApiTags } from '@nestjs/swagger';
+import { LoginDto } from './dto/login.dto';
 
-
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -20,6 +22,19 @@ export class AuthController {
   @Public()
   @UseGuards(LocalAuthGuard)
   @ResponseMessage("User login")
+  @ApiBody({ 
+    type: LoginDto, 
+    description: 'User login credentials',
+    examples: {
+    default: {
+      summary: 'Login',
+      value: {
+        email: 'admin@gmail.com',
+        password: '123456'
+      }
+    }
+  } 
+  })
   @Post('/login')
   handleLogin(
     @Req() req: Request & { user: any },
@@ -28,14 +43,17 @@ export class AuthController {
     return this.authService.login(req.user, response);
   }
 
+  @Post('/register')
   @Public()
   @ResponseMessage("Register a new User")
-  @Post('/register')
+  @ApiBody({ type: RegisterUserDto })
+  @ApiProperty({ type: RegisterUserDto })
   create(@Body() RegisterUserDto: RegisterUserDto) { 
     return this.authService.register(RegisterUserDto);
   }
 
   @Get('/account')
+  @ApiBearerAuth('access-token')
   @ResponseMessage("Get user information")
   handleGetAccount(@GetUser() user: IUser) {
     return this.userService.getProfile(user);
@@ -53,6 +71,7 @@ export class AuthController {
   }
 
   @Post('/logout')
+  @ApiBearerAuth('access-token')
   @ResponseMessage("User logout")
   handleLogout(
     @Req() req: Request & { user: any },
@@ -62,6 +81,7 @@ export class AuthController {
   }
 
   @Post('/verify-admin')
+  @ApiBearerAuth('access-token')
   @ResponseMessage('Verify admin access')
   async verifyAdmin(@GetUser() user: IUser) {
     return this.authService.verifyAdminAccess(user);
