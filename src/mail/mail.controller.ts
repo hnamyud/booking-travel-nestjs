@@ -3,7 +3,7 @@ import { MailService } from './mail.service';
 import { MailerService } from '@nestjs-modules/mailer';
 import { Public, ResponseMessage } from 'src/decorator/customize.decorator';
 import { SendResetPasswordDto } from 'src/auth/dto/reset-password.dto';
-import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiSecurity, ApiTags } from '@nestjs/swagger';
 
 
 @ApiTags('Mail')
@@ -17,6 +17,7 @@ export class MailController {
   @Post('reset-password')
   @Public()
   @ApiBody({ type: SendResetPasswordDto })
+  @ApiSecurity('csrf-token')
   @ResponseMessage("Reset password code has sent!")
   async handleResetPassword(
     @Body() sendResetPasswordDto: SendResetPasswordDto

@@ -8,7 +8,7 @@ import { IUser } from 'src/user/user.interface';
 import { Verify } from 'crypto';
 import { ResetPasswordDto, VerifyOtpDto } from './dto/reset-password.dto';
 import { UserService } from 'src/user/user.service';
-import { ApiBearerAuth, ApiBody, ApiProperty, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiProperty, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { LoginDto } from './dto/login.dto';
 
 @ApiTags('Auth')
@@ -17,25 +17,25 @@ export class AuthController {
   constructor(
     private authService: AuthService,
     private userService: UserService
-  ) {}
+  ) { }
 
+  @Post('/login')
   @Public()
   @UseGuards(LocalAuthGuard)
   @ResponseMessage("User login")
-  @ApiBody({ 
-    type: LoginDto, 
+  @ApiBody({
+    type: LoginDto,
     description: 'User login credentials',
     examples: {
-    default: {
-      summary: 'Login',
-      value: {
-        email: 'admin@gmail.com',
-        password: '123456'
+      default: {
+        summary: 'Login',
+        value: {
+          email: 'admin@gmail.com',
+          password: '123456'
+        }
       }
     }
-  } 
   })
-  @Post('/login')
   handleLogin(
     @Req() req: Request & { user: any },
     @Res({ passthrough: true }) response: Response
@@ -48,11 +48,12 @@ export class AuthController {
   @ResponseMessage("Register a new User")
   @ApiBody({ type: RegisterUserDto })
   @ApiProperty({ type: RegisterUserDto })
-  create(@Body() RegisterUserDto: RegisterUserDto) { 
+  create(@Body() RegisterUserDto: RegisterUserDto) {
     return this.authService.register(RegisterUserDto);
   }
 
   @Get('/account')
+  @ApiSecurity('csrf-token')
   @ApiBearerAuth('access-token')
   @ResponseMessage("Get user information")
   handleGetAccount(@GetUser() user: IUser) {
@@ -71,6 +72,7 @@ export class AuthController {
   }
 
   @Post('/logout')
+  @ApiSecurity('csrf-token')
   @ApiBearerAuth('access-token')
   @ResponseMessage("User logout")
   handleLogout(
@@ -81,6 +83,7 @@ export class AuthController {
   }
 
   @Post('/verify-admin')
+  @ApiSecurity('csrf-token')
   @ApiBearerAuth('access-token')
   @ResponseMessage('Verify admin access')
   async verifyAdmin(@GetUser() user: IUser) {
@@ -91,7 +94,7 @@ export class AuthController {
   @Public()
   @ResponseMessage("Verify OTP")
   async verifyOtp(@Body() verifyOtpDto: VerifyOtpDto) {
-    const isValid = await this.authService.verifyOtpOnly(verifyOtpDto.email, verifyOtpDto.otp); 
+    const isValid = await this.authService.verifyOtpOnly(verifyOtpDto.email, verifyOtpDto.otp);
     if (!isValid) throw new BadRequestException('Invalid OTP or OTP has expired!');
     return { message: 'Success!' };
   }

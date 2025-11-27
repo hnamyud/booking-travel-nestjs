@@ -8,7 +8,7 @@ import { PoliciesGuard } from 'src/auth/policy.guard';
 import { CheckPolicies } from 'src/decorator/policy.decorator';
 import { Action } from 'src/enum/action.enum';
 import { Booking } from './schemas/booking.schema';
-import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiSecurity, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Bookings')
 @Controller('bookings')
@@ -22,6 +22,7 @@ export class BookingsController {
     message: 'Bạn không có quyền tạo mới Booking'
   })
   @ApiBearerAuth('access-token')
+  @ApiSecurity('csrf-token')
   @ApiBody({ type: CreateBookingDto })
   @ResponseMessage('Create a new Booking')
   async create(
@@ -67,6 +68,7 @@ export class BookingsController {
     message: 'Bạn không có quyền cập nhật Booking'
   })
   @ApiBearerAuth('access-token')
+  @ApiSecurity('csrf-token')
   @ApiBody({ type: UpdateBookingDto })
   @ResponseMessage('Update a Booking')
   update(@Param('id') id: string, @Body() updateBookingDto: UpdateBookingDto) {
@@ -79,6 +81,7 @@ export class BookingsController {
     message: 'Bạn không có quyền xóa Booking'
   })
   @ApiBearerAuth('access-token')
+  @ApiSecurity('csrf-token')
   @ResponseMessage('Delete a Booking')
   remove(@Param('id') id: string) {
     return this.bookingsService.remove(id);

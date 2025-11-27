@@ -1,6 +1,6 @@
 import { Controller, Delete, Param, Post, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { PoliciesGuard } from 'src/auth/policy.guard';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { ImagesUploadDto } from './dto/images-upload.dto';
@@ -14,6 +14,7 @@ export class UploadController {
 
   @Post()
   @ApiBearerAuth('access-token')
+  @ApiSecurity('csrf-token')
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     description: 'Upload images',
@@ -32,6 +33,7 @@ export class UploadController {
 
   @Delete(':publicId')
   @ApiBearerAuth('access-token')
+  @ApiSecurity('csrf-token')
   @ResponseMessage ("Delete image from Cloudinary")
   async deleteImage(@Param('publicId') publicId: string) {
     return await this.cloudinaryService.deleteImage(publicId);

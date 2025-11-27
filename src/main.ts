@@ -8,6 +8,7 @@ import { JwtAuthGuard } from './auth/jw-auth.guard';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { helmetConfig } from './config/helmet.config';
+import { csrfErrorHandler, csrfMiddleware } from './config/csrf.config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -17,12 +18,26 @@ async function bootstrap() {
   // Apply helmet middleware with custom config
   app.use(helmet(helmetConfig));
 
+  // Config cookie (Http-only, Secure)
+  app.use(cookieParser());
+
+  // Config Csrf
+  app.use(csrfMiddleware); // Chặn request
+  app.use(csrfErrorHandler); // Bắt lỗi trả về JSON
+
   // Config CORS
   app.enableCors({
     origin: 'http://localhost:5173', // FE domain
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'x-csrf-token', // Cho phép CSRF header
+      'x-xsrf-token'
+    ],
   });
+
   // Use JWT global
   app.useGlobalGuards(new JwtAuthGuard(reflector));
   app.useGlobalPipes(new ValidationPipe());
@@ -34,27 +49,71 @@ async function bootstrap() {
     type: VersioningType.URI,
     defaultVersion: '1',
   });
-  // Config cookie (Http-only, Secure)
-  app.use(cookieParser());
 
+  // Swagger setup
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Booking Travel API')
-    .setDescription('API docs for booking system')
+    .setDescription(`
+      ## API Documentation for Booking Travel System
+      
+      ### 🔐 Authentication
+      - Most endpoints require JWT Bearer token
+      - Get token from \`/auth/login\` endpoint
+      - Use "Authorize" button below to set token globally
+      
+      ### 🛡️ CSRF Protection  
+      - POST/PUT/PATCH/DELETE requests need CSRF token
+      - Get CSRF token from \`/csrf-token\` endpoint
+      - Include in \`X-CSRF-Token\` header
+      
+      ### 📱 API Versioning
+      - All endpoints are prefixed with \`/api/v1/\`
+      - Default version: v1
+      `)
     .setVersion('1.0')
+    .addServer('http://localhost:8080', 'Development Server')
     .addBearerAuth(
       {
         type: 'http',
         scheme: 'bearer',
         bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Enter JWT token (without Bearer prefix)',
         in: 'header'
       },
       'access-token',
     )
+    .addApiKey(
+      {
+        type: 'apiKey',
+        name: 'x-csrf-token',
+        in: 'header',
+        description: 'CSRF Token for state-changing operations'
+      },
+      'csrf-token'
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('docs', app, document);
+  // ✅ Setup Swagger UI với options
+  SwaggerModule.setup('docs', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true, // ✅ Remember JWT token
+      tagsSorter: 'alpha',        // ✅ Sort tags alphabetically
+      operationsSorter: 'alpha',  // ✅ Sort operations alphabetically  
+      docExpansion: 'none',       // ✅ Collapse all sections initially
+      filter: true,               // ✅ Enable search filter
+      showRequestHeaders: true,   // ✅ Show request headers
+    },
+    customSiteTitle: 'Booking Travel API Docs', // ✅ Custom title
+    customfavIcon: '/favicon.ico',               // ✅ Custom favicon
+    customJs: [
+      // ✅ Auto-add CSRF token (Optional advanced feature)
+      '/swagger-csrf.js'
+    ],
+  });
 
-  await app.listen(configService.get('PORT'));
+  const port = configService.get('PORT');
+  await app.listen(port);
 }
 bootstrap();

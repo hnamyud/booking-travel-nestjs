@@ -8,7 +8,7 @@ import { PoliciesGuard } from 'src/auth/policy.guard';
 import { Action } from 'src/enum/action.enum';
 import { Review } from './schema/review.schema';
 import { CheckPolicies } from 'src/decorator/policy.decorator';
-import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiSecurity, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Review')
 @Controller('review')
@@ -22,6 +22,7 @@ export class ReviewController {
     message: 'Bạn không có quyền tạo mới Review'
   })
   @ApiBearerAuth('access-token')
+  @ApiSecurity('csrf-token')
   @ApiBody({ type: CreateReviewDto })
   @ResponseMessage('Create a new review')
   async create(
@@ -59,6 +60,7 @@ export class ReviewController {
     message: 'Bạn không có quyền cập nhật Review'
   })
   @ApiBearerAuth('access-token')
+  @ApiSecurity('csrf-token')
   @ApiBody({ type: UpdateReviewDto })
   @ResponseMessage("Update a Review")
   update( @Body() updateReviewDto: UpdateReviewDto) {
@@ -71,6 +73,7 @@ export class ReviewController {
     message: 'Bạn không có quyền xóa Review'
   })
   @ApiBearerAuth('access-token')
+  @ApiSecurity('csrf-token')
   @ResponseMessage("Delete a Review")
   remove(@Param('id') id: string) {
     return this.reviewService.remove(id);

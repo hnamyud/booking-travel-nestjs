@@ -7,7 +7,7 @@ import { PoliciesGuard } from 'src/auth/policy.guard';
 import { Action } from 'src/enum/action.enum';
 import { CheckPolicies } from 'src/decorator/policy.decorator';
 import { Tour } from './schema/tour.schema';
-import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiSecurity, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Tour')
 @Controller('tour')
@@ -21,6 +21,7 @@ export class TourController {
     message: 'Bạn không có quyền tạo mới Tour'
   })
   @ApiBearerAuth('access-token')
+  @ApiSecurity('csrf-token')
   @ApiBody({ type: CreateTourDto })
   @ResponseMessage('Create a new tour')
   async create(@Body() createTourDto: CreateTourDto) {
@@ -55,6 +56,7 @@ export class TourController {
     message: 'Bạn không có quyền cập nhật Tour'
   })
   @ApiBearerAuth('access-token')
+  @ApiSecurity('csrf-token')
   @ApiBody({ type: UpdateTourDto })
   @ResponseMessage("Update a Tour")
   update(@Param('id') id: string, @Body() updateTourDto: UpdateTourDto) {
@@ -68,6 +70,7 @@ export class TourController {
     message: 'Bạn không có quyền xóa Tour'
   })
   @ApiBearerAuth('access-token')
+  @ApiSecurity('csrf-token')
   @ResponseMessage("Delete a Tour")
   remove(@Param('id') id: string) {
     return this.tourService.remove(id);

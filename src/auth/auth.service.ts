@@ -1,5 +1,5 @@
 import { VerifyOtpDto, ResetPasswordDto } from './dto/reset-password.dto';
-import { BadRequestException, ForbiddenException, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import ms from 'ms';
@@ -8,6 +8,10 @@ import { UserService } from 'src/user/user.service'
 import { Response } from 'express';
 import { RegisterUserDto } from 'src/user/dto/create-user.dto';
 import Redis from 'ioredis';
+import { UserModule } from 'src/user/user.module';
+import { InjectModel } from '@nestjs/mongoose';
+import { User, UserDocument } from 'src/user/schema/user.schema';
+import { Model } from 'mongoose';
 
 
 @Injectable()
@@ -16,6 +20,7 @@ export class AuthService {
     private jwtService: JwtService,
     private configService: ConfigService,
     private userService: UserService,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
     @Inject('REDIS_CLIENT') private redisClient: Redis,
   ) { }
 
@@ -77,11 +82,48 @@ export class AuthService {
     }
   }
 
-  logout = async (iuser: IUser, response: Response) => {
-    // Clear refresh token in cookie
-    response.clearCookie('refresh_token');
-    await this.userService.updateUserToken(null, iuser._id.toString());
-    return 'ok';
+  async logout(user: IUser, response: Response) {
+    try {
+      // ✅ 1. Clear refresh token trong database
+      await this.userModel.updateOne(
+        { _id: user._id },
+        { 
+          $unset: { 
+            refreshToken: 1 // Remove refresh token field
+          }
+        }
+      );
+
+      // ✅ 2. Clear cookies trên browser
+      response.clearCookie('refresh_token', {
+        httpOnly: true,
+        secure: this.configService.get('NODE_ENV') === 'production',
+        sameSite: 'strict',
+        path: '/',
+      });
+
+      // ✅ Optional: Clear access token cookie nếu có
+      response.clearCookie('access_token', {
+        httpOnly: true,
+        secure: this.configService.get('NODE_ENV') === 'production', 
+        sameSite: 'strict',
+        path: '/',
+      });
+
+      // ✅ 3. Log activity (optional)
+      console.log(`User ${user.email} logged out at ${new Date().toISOString()}`);
+
+      // ✅ 4. Return success response
+      return {
+        message: 'Logout successful',
+        loggedOut: true,
+        timestamp: new Date().toISOString()
+      };
+
+    } catch (error) {
+      console.error('Logout error:', error);
+      throw new UnauthorizedException('Logout failed');
+    }
   }
 
   processToken = async (refreshToken: string, response: Response) => {
