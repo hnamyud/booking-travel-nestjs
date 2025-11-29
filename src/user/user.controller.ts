@@ -24,7 +24,6 @@ export class UserController {
     message: 'Bạn không có quyền tạo mới User'
   })
   @ApiBearerAuth('access-token')
-  @ApiSecurity('csrf-token')
   @ResponseMessage("Create a new User")
   @ApiBody({ type: CreateUserDto })
   async create(
@@ -69,7 +68,6 @@ export class UserController {
     message: 'Bạn không có quyền thay đổi mật khẩu'
   })
   @ApiBearerAuth('access-token')
-  @ApiSecurity('csrf-token')
   @ApiBody({ type: ChangePasswordDto })
   @ResponseMessage('Change password successfully')
   async changePassword(
@@ -97,7 +95,6 @@ export class UserController {
     message: 'Chỉ admin mới có quyền thay đổi role'
   })
   @ApiBearerAuth('access-token')
-  @ApiSecurity('csrf-token')
   @ResponseMessage('Update user role successfully')
   async updateRole(
     @Param('id') id: string,
@@ -114,7 +111,6 @@ export class UserController {
     message: 'Bạn không có quyền cập nhật User'
   })
   @ApiBearerAuth('access-token')
-  @ApiSecurity('csrf-token')
   @ApiBody({ type: UpdateUserDto })
   @ResponseMessage("Update a User")
   update(
@@ -132,7 +128,6 @@ export class UserController {
     message: 'Bạn không có quyền xóa User'
   })
   @ApiBearerAuth('access-token')
-  @ApiSecurity('csrf-token')
   @ResponseMessage("Delete a User")
   remove(
     @Param('id') id: string,

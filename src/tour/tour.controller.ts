@@ -21,7 +21,6 @@ export class TourController {
     message: 'Bạn không có quyền tạo mới Tour'
   })
   @ApiBearerAuth('access-token')
-  @ApiSecurity('csrf-token')
   @ApiBody({ type: CreateTourDto })
   @ResponseMessage('Create a new tour')
   async create(@Body() createTourDto: CreateTourDto) {
@@ -56,7 +55,6 @@ export class TourController {
     message: 'Bạn không có quyền cập nhật Tour'
   })
   @ApiBearerAuth('access-token')
-  @ApiSecurity('csrf-token')
   @ApiBody({ type: UpdateTourDto })
   @ResponseMessage("Update a Tour")
   update(@Param('id') id: string, @Body() updateTourDto: UpdateTourDto) {
@@ -70,7 +68,6 @@ export class TourController {
     message: 'Bạn không có quyền xóa Tour'
   })
   @ApiBearerAuth('access-token')
-  @ApiSecurity('csrf-token')
   @ResponseMessage("Delete a Tour")
   remove(@Param('id') id: string) {
     return this.tourService.remove(id);

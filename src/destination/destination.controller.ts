@@ -22,7 +22,6 @@ export class DestinationController {
     message: 'Bạn không có quyền tạo mới Destination'
   })
   @ApiBearerAuth('access-token')
-  @ApiSecurity('csrf-token')
   @ApiBody({ type: CreateDestinationDto })
   @ResponseMessage("Create a new Destination")
   async create(
@@ -59,7 +58,6 @@ export class DestinationController {
     message: 'Bạn không có quyền cập nhật Destination'
   })
   @ApiBearerAuth('access-token')
-  @ApiSecurity('csrf-token')
   @ApiBody({ type: UpdateDestinationDto })
   @ResponseMessage("Update a Destination")
   update(@Param('id') id: string, @Body() updateDestinationDto: UpdateDestinationDto) {
@@ -73,7 +71,6 @@ export class DestinationController {
     message: 'Bạn không có quyền xóa Destination'
   })
   @ApiBearerAuth('access-token')
-  @ApiSecurity('csrf-token')
   @ResponseMessage("Delete a Destination")
   remove(@Param('id') id: string) {
     return this.destinationService.remove(id);

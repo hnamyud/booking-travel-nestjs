@@ -8,7 +8,7 @@ import { JwtAuthGuard } from './auth/jw-auth.guard';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { helmetConfig } from './config/helmet.config';
-import { csrfErrorHandler, csrfMiddleware } from './config/csrf.config';
+import { ThrottlerGuard } from '@nestjs/throttler';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -19,11 +19,7 @@ async function bootstrap() {
   app.use(helmet(helmetConfig));
 
   // Config cookie (Http-only, Secure)
-  app.use(cookieParser());
-
-  // Config Csrf
-  app.use(csrfMiddleware); // Chặn request
-  app.use(csrfErrorHandler); // Bắt lỗi trả về JSON
+  app.use(cookieParser()); 
 
   // Config CORS
   app.enableCors({
@@ -33,13 +29,13 @@ async function bootstrap() {
     allowedHeaders: [
       'Content-Type',
       'Authorization',
-      'x-csrf-token', // Cho phép CSRF header
-      'x-xsrf-token'
     ],
   });
 
   // Use JWT global
-  app.useGlobalGuards(new JwtAuthGuard(reflector));
+  app.useGlobalGuards(
+    new JwtAuthGuard(reflector),
+  );
   app.useGlobalPipes(new ValidationPipe());
   // Transform response from controller
   app.useGlobalInterceptors(new TransformInterceptor(reflector));

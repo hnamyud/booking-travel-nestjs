@@ -5,10 +5,9 @@ import { AuthService } from './auth.service';
 import { RegisterUserDto } from 'src/user/dto/create-user.dto';
 import { Response, Request } from 'express';
 import { IUser } from 'src/user/user.interface';
-import { Verify } from 'crypto';
 import { ResetPasswordDto, VerifyOtpDto } from './dto/reset-password.dto';
 import { UserService } from 'src/user/user.service';
-import { ApiBearerAuth, ApiBody, ApiProperty, ApiSecurity, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiProperty, ApiTags } from '@nestjs/swagger';
 import { LoginDto } from './dto/login.dto';
 
 @ApiTags('Auth')
@@ -53,7 +52,6 @@ export class AuthController {
   }
 
   @Get('/account')
-  @ApiSecurity('csrf-token')
   @ApiBearerAuth('access-token')
   @ResponseMessage("Get user information")
   handleGetAccount(@GetUser() user: IUser) {
@@ -72,7 +70,6 @@ export class AuthController {
   }
 
   @Post('/logout')
-  @ApiSecurity('csrf-token')
   @ApiBearerAuth('access-token')
   @ResponseMessage("User logout")
   handleLogout(
@@ -83,7 +80,6 @@ export class AuthController {
   }
 
   @Post('/verify-admin')
-  @ApiSecurity('csrf-token')
   @ApiBearerAuth('access-token')
   @ResponseMessage('Verify admin access')
   async verifyAdmin(@GetUser() user: IUser) {

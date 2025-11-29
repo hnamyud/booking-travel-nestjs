@@ -17,7 +17,6 @@ export class MailController {
   @Post('reset-password')
   @Public()
   @ApiBody({ type: SendResetPasswordDto })
-  @ApiSecurity('csrf-token')
   @ResponseMessage("Reset password code has sent!")
   async handleResetPassword(
     @Body() sendResetPasswordDto: SendResetPasswordDto

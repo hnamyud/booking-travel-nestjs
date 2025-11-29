@@ -14,7 +14,6 @@ export class UploadController {
 
   @Post()
   @ApiBearerAuth('access-token')
-  @ApiSecurity('csrf-token')
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     description: 'Upload images',
@@ -33,7 +32,6 @@ export class UploadController {
 
   @Delete(':publicId')
   @ApiBearerAuth('access-token')
-  @ApiSecurity('csrf-token')
   @ResponseMessage ("Delete image from Cloudinary")
   async deleteImage(@Param('publicId') publicId: string) {
     return await this.cloudinaryService.deleteImage(publicId);
