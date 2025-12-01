@@ -3,23 +3,21 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { UserModule } from './user/user.module';
-import { AuthModule } from './auth/auth.module';
 import { softDeletePlugin } from 'soft-delete-plugin-mongoose';
-import { DestinationModule } from './destination/destination.module';
-import { TourModule } from './tour/tour.module';
-import { ReviewModule } from './review/review.module';
-import { CloudinaryModule } from './cloudinary/cloudinary.module';
-import { PaymentsModule } from './payments/payments.module';
-import { BookingsModule } from './bookings/bookings.module';
-import { CaslModule } from './casl/casl.module';
-import { MailModule } from './mail/mail.module';
-import { RedisModule } from './redis/redis.module';
-import { MailerModule } from '@nestjs-modules/mailer';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { CaslModule } from './modules/casl/casl.module';
+import { MailModule } from './modules/mail/mail.module';
+import { RedisModule } from './modules/redis/redis.module';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
-import { Scheduler } from 'rxjs';
-import { AppThrottlerGuard } from './auth/app-throttler.guard';
+import { AppThrottlerGuard } from './core/guards/app-throttler.guard';
+import { UserModule } from './modules/user/user.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { DestinationModule } from './modules/destination/destination.module';
+import { TourModule } from './modules/tour/tour.module';
+import { ReviewModule } from './modules/review/review.module';
+import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
+import { PaymentsModule } from './modules/payment/payments.module';
+import { BookingsModule } from './modules/booking/bookings.module';
 
 
 @Module({
