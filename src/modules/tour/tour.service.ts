@@ -25,126 +25,111 @@ export class TourService {
   }
 
   async create(createTourDto: CreateTourDto) {
-    const {
-      name,
-      description,
-      duration,
-      price,
-      timeStart,
-      timeEnd,
-      isAvailable,
-      destinations,
-      reviews
-    } = createTourDto;
 
     const newTour = await this.tourModel.create({
-      name,
-      description,
-      duration,
-      price,
-      timeStart,
-      timeEnd,
-      isAvailable,
-      destinations,
-      reviews
+      ...createTourDto,
+      // Khi mới tạo, số chỗ còn trống (available) = Tổng số chỗ (total)
+      availableSlots: createTourDto.totalSlots,
+      // Số người đã đặt bắt đầu bằng 0
+      bookedParticipants: 0
     });
     return newTour;
   }
 
   async findAll(currentPage: number, limit: number, qs: string) {
-  const { filter, sort } = aqp(qs);
+    const { filter, sort } = aqp(qs);
 
-  delete filter.current;
-  delete filter.pageSize;
-  let offset = (+currentPage - 1) * (+limit);
-  let defaultLimit = +limit ? +limit : 10;
+    delete filter.current;
+    delete filter.pageSize;
+    let offset = (+currentPage - 1) * (+limit);
+    let defaultLimit = +limit ? +limit : 10;
 
-  const pipeline: any[] = [];
+    const pipeline: any[] = [];
 
-  // === CUSTOM PARSER: thay $ bằng ký tự khác ===
-  // VD: price_min, price_max thay vì price[$gte], price[$lte]
-  const customFilter: any = {};
+    // === CUSTOM PARSER: thay $ bằng ký tự khác ===
+    // VD: price_min, price_max thay vì price[$gte], price[$lte]
+    const customFilter: any = {};
 
-  // Parse price range: price_min=1000000&price_max=5000000
-  if (filter.price_min || filter.price_max) {
-    customFilter.price = {};
-    if (filter.price_min) customFilter.price.$gte = +filter.price_min;
-    if (filter.price_max) customFilter.price.$lte = +filter.price_max;
-    delete filter.price_min;
-    delete filter.price_max;
-  }
-
-  // Parse time range: timeStart_from=2025-09-01&timeEnd_to=2025-12-31
-  if (filter.timeStart_from) {
-    customFilter.timeStart = { $gte: new Date(filter.timeStart_from) };
-    delete filter.timeStart_from;
-  }
-  if (filter.timeEnd_to) {
-    customFilter.timeEnd = { $lte: new Date(filter.timeEnd_to) };
-    delete filter.timeEnd_to;
-  }
-
-  // Parse destination name: destinationName=Paris
-  if (filter.destinationName) {
-    pipeline.push(
-      {
-        $lookup: {
-          from: 'destinations',
-          localField: 'destinations',
-          foreignField: '_id',
-          as: 'destinationDetails'
-        }
-      },
-      {
-        $match: {
-          'destinationDetails.name': new RegExp(filter.destinationName, 'i')
-        }
-      }
-    );
-    delete filter.destinationName;
-  }
-
-  // Merge với filter gốc
-  const matchStage = { ...filter, ...customFilter };
-
-  if (Object.keys(matchStage).length > 0) {
-    pipeline.push({ $match: matchStage });
-  }
-
-  // 3. Count total
-  const countPipeline = [...pipeline, { $count: 'total' }];
-  const countResult = await this.tourModel.aggregate(countPipeline);
-  const totalItems = countResult[0]?.total || 0;
-  const totalPages = Math.ceil(totalItems / defaultLimit);
-
-  // 4. Sort, skip, limit
-  if (sort) {
-    pipeline.push({ $sort: sort });
-  }
-  pipeline.push({ $skip: offset }, { $limit: defaultLimit });
-
-  // 5. Populate destinations
-  pipeline.push({
-    $lookup: {
-      from: 'destinations',
-      localField: 'destinations',
-      foreignField: '_id',
-      as: 'destinations'
+    // Parse price range: price_min=1000000&price_max=5000000
+    if (filter.price_min || filter.price_max) {
+      customFilter.price = {};
+      if (filter.price_min) customFilter.price.$gte = +filter.price_min;
+      if (filter.price_max) customFilter.price.$lte = +filter.price_max;
+      delete filter.price_min;
+      delete filter.price_max;
     }
-  });
 
-  const result = await this.tourModel.aggregate(pipeline);
+    // Parse time range: timeStart_from=2025-09-01&timeEnd_to=2025-12-31
+    if (filter.timeStart_from) {
+      customFilter.timeStart = { $gte: new Date(filter.timeStart_from) };
+      delete filter.timeStart_from;
+    }
+    if (filter.timeEnd_to) {
+      customFilter.timeEnd = { $lte: new Date(filter.timeEnd_to) };
+      delete filter.timeEnd_to;
+    }
 
-  return {
-    meta: {
-      current: currentPage,
-      pageSize: limit,
-      pages: totalPages,
-      total: totalItems
-    },
-    result
-  };
-}
+    // Parse destination name: destinationName=Paris
+    if (filter.destinationName) {
+      pipeline.push(
+        {
+          $lookup: {
+            from: 'destinations',
+            localField: 'destinations',
+            foreignField: '_id',
+            as: 'destinationDetails'
+          }
+        },
+        {
+          $match: {
+            'destinationDetails.name': new RegExp(filter.destinationName, 'i')
+          }
+        }
+      );
+      delete filter.destinationName;
+    }
+
+    // Merge với filter gốc
+    const matchStage = { ...filter, ...customFilter };
+
+    if (Object.keys(matchStage).length > 0) {
+      pipeline.push({ $match: matchStage });
+    }
+
+    // 3. Count total
+    const countPipeline = [...pipeline, { $count: 'total' }];
+    const countResult = await this.tourModel.aggregate(countPipeline);
+    const totalItems = countResult[0]?.total || 0;
+    const totalPages = Math.ceil(totalItems / defaultLimit);
+
+    // 4. Sort, skip, limit
+    if (sort) {
+      pipeline.push({ $sort: sort });
+    }
+    pipeline.push({ $skip: offset }, { $limit: defaultLimit });
+
+    // 5. Populate destinations
+    pipeline.push({
+      $lookup: {
+        from: 'destinations',
+        localField: 'destinations',
+        foreignField: '_id',
+        as: 'destinations'
+      }
+    });
+
+    const result = await this.tourModel.aggregate(pipeline);
+
+    return {
+      meta: {
+        current: currentPage,
+        pageSize: limit,
+        pages: totalPages,
+        total: totalItems
+      },
+      result
+    };
+  }
 
   async findOne(id: string) {
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -160,18 +145,34 @@ export class TourService {
   }
 
   async update(id: string, updateTourDto: UpdateTourDto) {
-    const { ...updateData } = updateTourDto;
+    // 1. Nếu Admin có sửa totalSlots, phải check logic
+    if (updateTourDto.totalSlots) {
+      const currentTour = await this.tourModel.findById(id);
 
-    // Validate ObjectId
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new BadRequestException('ID không hợp lệ');
+      // Không cho phép giảm tổng chỗ xuống thấp hơn số người đã đặt
+      if (updateTourDto.totalSlots < currentTour.bookedParticipants) {
+        throw new BadRequestException(
+          `Cannot reduce total slots to ${updateTourDto.totalSlots} because there are already ${currentTour.bookedParticipants} participants booked!`
+        );
+      }
+
+      // Tự động tính lại availableSlots
+      // available = Mới - Đã đặt
+      updateTourDto['availableSlots'] = updateTourDto.totalSlots - currentTour.bookedParticipants;
     }
 
-    const result = await this.tourModel.updateOne(
-      { _id: id },
-      { $set: updateData } // Sử dụng $set operator
+    // 2. Chặn không cho update trực tiếp 2 trường này từ DTO (để đảm bảo tính toàn vẹn)
+    delete updateTourDto['bookedParticipants'];
+    delete updateTourDto['availableSlots']; // Chỉ được update gián tiếp qua totalSlots
+
+    // 3. Update
+    const updatedTour = await this.tourModel.findByIdAndUpdate(
+      id,
+      updateTourDto,
+      { new: true } // Trả về data mới sau khi update
     );
-    return result;
+
+    return updatedTour;
   }
 
   remove(id: string) {

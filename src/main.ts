@@ -79,15 +79,6 @@ async function bootstrap() {
       },
       'access-token',
     )
-    .addApiKey(
-      {
-        type: 'apiKey',
-        name: 'x-csrf-token',
-        in: 'header',
-        description: 'CSRF Token for state-changing operations'
-      },
-      'csrf-token'
-    )
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);

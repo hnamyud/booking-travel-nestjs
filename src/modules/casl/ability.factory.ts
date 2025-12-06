@@ -9,6 +9,7 @@ import { Tour } from '../tour/schema/tour.schema';
 import { Review } from '../review/schema/review.schema';
 import { Payment } from '../payment/schemas/payment.schema';
 import { Destination } from '../destination/schema/destination.schema';
+import { StatusBooking } from 'src/common/enum/status-booking.enum';
 // Định nghĩa các subject (đối tượng) được phân quyền
 export type Subjects = InferSubjects<
   typeof User |
@@ -55,7 +56,7 @@ export class CaslAbilityFactory {
             Payment
           ]
         );
-        can(Action.Update, Booking, { status: 'PENDING' });
+        can(Action.Update, Booking, { status: StatusBooking.Pending });
         can([Action.Read, Action.Read_All], Tour);
         can([Action.Read, Action.Read_All, Action.Delete], Review);
         can([Action.Read], User);

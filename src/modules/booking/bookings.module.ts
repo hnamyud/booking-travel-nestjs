@@ -4,13 +4,24 @@ import { BookingsController } from './bookings.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Booking, BookingSchema } from './schemas/booking.schema';
 import { CaslModule } from 'src/modules/casl/casl.module';
+import { LockService } from 'src/common/services/lock.services';
+import { Tour, TourSchema } from '../tour/schema/tour.schema';
+import { RedisModule } from '../redis/redis.module';
+import { PaymentsModule } from '../payment/payments.module';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Booking.name, schema: BookingSchema }]),
-    CaslModule
+    MongooseModule.forFeature([
+      { name: Booking.name, schema: BookingSchema },
+      { name: Tour.name, schema: TourSchema }
+    ]),
+    CaslModule,
+    RedisModule
   ],
   controllers: [BookingsController],
-  providers: [BookingsService]
+  providers: [
+    BookingsService,
+    LockService
+  ]
 })
 export class BookingsModule {}

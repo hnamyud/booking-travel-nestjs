@@ -1,11 +1,16 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import mongoose, { HydratedDocument } from "mongoose";
+import { Destination } from "src/modules/destination/schema/destination.schema";
 
 export type TourDocument = HydratedDocument<Tour>;
 
-@Schema({ timestamps: true })
+@Schema({ 
+    timestamps: true,
+    toJSON: { virtuals: true }, // Virtual field
+    toObject: { virtuals: true }
+})
 export class Tour {
-    @Prop()
+    @Prop({ required: true, index: true })
     name: string;
 
     @Prop()
@@ -23,28 +28,25 @@ export class Tour {
     @Prop()
     timeEnd: Date;
 
-    @Prop({ required: true })
+    @Prop({ required: true, min: 0 })
     totalSlots: number;
 
-    @Prop({ required: true })
+    @Prop({ required: true, min: 0, index: true })
     availableSlots: number;
 
-    @Prop()
+    @Prop({ default: 0 })
+    bookedParticipants: number;
+
+    @Prop({ default: true, index: true })
     isAvailable: boolean;
 
-    @Prop({ type: Object, ref: 'Destination' })
-    destinations: {
-        _id: mongoose.Schema.Types.ObjectId;
-        name: string;
-    };
-
-    @Prop({ type: Object })
-    review: {
-        _id: mongoose.Schema.Types.ObjectId;
-        rating: number;
-        comment: string;
-        createdAt: Date;
-    };
+    @Prop({ 
+        type: [{ 
+            type: mongoose.Schema.Types.ObjectId, 
+            ref: 'Destination' 
+        }] 
+    })
+    destinations: Destination[];
 
     @Prop()
     createdAt: Date;
@@ -53,4 +55,21 @@ export class Tour {
     updatedAt: Date;
 }
 
-export const TourSchema = SchemaFactory.createForClass(Tour);
+// --- VIRTUAL POPULATE (Review) ---
+// Giúp bro lấy review của tour mà không cần lưu review vào trong tour
+const TourSchema = SchemaFactory.createForClass(Tour);
+TourSchema.virtual('reviews', {
+    ref: 'Review',          // Tên model Review
+    localField: '_id',      // Khớp _id của Tour
+    foreignField: 'tour_id' // với trường tour_id bên Review
+});
+
+// Middleware: Tự động tính availableSlots khi tạo (Optional)
+// TourSchema.pre('save', function(next) {
+//    if (this.isNew) {
+//        this.availableSlots = this.totalSlots;
+//    }
+//    next();
+// });
+
+export { TourSchema };

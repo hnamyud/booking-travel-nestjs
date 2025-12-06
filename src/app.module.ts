@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Logger, MiddlewareConsumer, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -18,6 +18,10 @@ import { ReviewModule } from './modules/review/review.module';
 import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 import { PaymentsModule } from './modules/payment/payments.module';
 import { BookingsModule } from './modules/booking/bookings.module';
+import { LoggerMiddleware } from './core/middleware/logger.middleware';
+import { HashAlgorithm, ignoreLogger } from 'vnpay';
+import { VnpayModuleOptions } from './modules/vnpay/interfaces/vnpay-module-option.interface';
+import { VnpayModule } from './modules/vnpay';
 
 
 @Module({
@@ -55,6 +59,19 @@ import { BookingsModule } from './modules/booking/bookings.module';
     ConfigModule.forRoot({
       isGlobal: true
     }),
+    VnpayModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService): Promise<VnpayModuleOptions> => ({
+        tmnCode: configService.get('VNPAY_TMN_CODE'),
+        secureSecret: configService.get('VNPAY_SECRET_KEY'),
+        vnpayHost: configService.get('VNPAY_HOST', 'https://sandbox.vnpayment.vn'),
+        testMode: configService.get('NODE_ENV') !== 'production',
+        hashAlgorithm: HashAlgorithm.SHA512,
+        loggerFn: ignoreLogger,
+        enableLog: true,
+      }),
+      inject: [ConfigService],
+    }),
     UserModule,
     AuthModule,
     DestinationModule,
@@ -65,7 +82,7 @@ import { BookingsModule } from './modules/booking/bookings.module';
     BookingsModule,
     CaslModule,
     MailModule,
-    RedisModule
+    RedisModule,
   ],
   controllers: [AppController],
   providers: [
@@ -76,4 +93,11 @@ import { BookingsModule } from './modules/booking/bookings.module';
     }
   ],
 })
-export class AppModule { }
+export class AppModule { 
+  // Configure middleware globally
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(LoggerMiddleware)
+      .forRoutes('*');
+  }
+}

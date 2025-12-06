@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Ip } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
@@ -26,13 +26,19 @@ export class PaymentsController {
   @ResponseMessage('Create a new Payment')
   async create(
     @Body() createPaymentDto: CreatePaymentDto,
-    @GetUser() user: IUser
+    @GetUser() user: IUser,
+    @Ip() ipAddress?: string
   ) {
-    const newPayment = await this.paymentsService.create(createPaymentDto, user);
+    const newPayment = await this.paymentsService.create(createPaymentDto, user, ipAddress);
     return {
       id: newPayment?.id,
       createdAt: newPayment?.createdAt
     }
+  }
+
+  @Post('vnpay-ipn')
+  async vnpayIpn(@Query() query: any) {
+    return this.paymentsService.handleVnpayIpn(query);
   }
 
   @Get()

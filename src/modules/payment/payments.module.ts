@@ -4,6 +4,7 @@ import { PaymentsController } from './payments.controller';
 import { Payment, PaymentSchema } from './schemas/payment.schema';
 import { MongooseModule } from '@nestjs/mongoose';
 import { CaslModule } from 'src/modules/casl/casl.module';
+import { VnpayModule } from '../vnpay';
 
 @Module({
   imports: [

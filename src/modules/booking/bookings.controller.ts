@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Req } from '@nestjs/common';
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
@@ -26,9 +26,9 @@ export class BookingsController {
   @ResponseMessage('Create a new Booking')
   async create(
     @Body() createBookingDto: CreateBookingDto,
-    @GetUser() user: IUser
+    @Req() req: Request & { user: any }
   ) {
-    const newBooking = await this.bookingsService.create(createBookingDto, user);
+    const newBooking = await this.bookingsService.create(createBookingDto, req.user);
     return {
       id: newBooking?.id,
       createdAt: newBooking?.createdAt
