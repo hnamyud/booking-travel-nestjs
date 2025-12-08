@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Ip
 import { PaymentsService } from './payments.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
-import { ResponseMessage, GetUser } from 'src/core/decorator/customize.decorator';
+import { ResponseMessage, GetUser, Public } from 'src/core/decorator/customize.decorator';
 import { IUser } from 'src/common/interfaces/user.interface';
 import { PoliciesGuard } from 'src/core/guards/policy.guard';
 import { CheckPolicies } from 'src/core/decorator/policy.decorator';
@@ -32,13 +32,21 @@ export class PaymentsController {
     const newPayment = await this.paymentsService.create(createPaymentDto, user, ipAddress);
     return {
       id: newPayment?.id,
+      paymentUrl: newPayment?.paymentUrl,
       createdAt: newPayment?.createdAt
     }
   }
 
-  @Post('vnpay-ipn')
+  @Public()
+  @Get('vnpay-ipn')
   async vnpayIpn(@Query() query: any) {
     return this.paymentsService.handleVnpayIpn(query);
+  }
+
+  @Public()
+  @Get('vnpay-return')
+  async vnpayReturn(@Query() query: any) {
+    return this.paymentsService.handleVnpayReturn(query);
   }
 
   @Get()

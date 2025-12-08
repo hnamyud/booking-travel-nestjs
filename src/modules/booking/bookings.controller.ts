@@ -31,6 +31,7 @@ export class BookingsController {
     const newBooking = await this.bookingsService.create(createBookingDto, req.user);
     return {
       id: newBooking?.id,
+      amount: newBooking?.totalPrice,
       createdAt: newBooking?.createdAt
     }
   }

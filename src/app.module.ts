@@ -22,6 +22,7 @@ import { LoggerMiddleware } from './core/middleware/logger.middleware';
 import { HashAlgorithm, ignoreLogger } from 'vnpay';
 import { VnpayModuleOptions } from './modules/vnpay/interfaces/vnpay-module-option.interface';
 import { VnpayModule } from './modules/vnpay';
+import { ScheduleModule } from '@nestjs/schedule';
 
 
 @Module({
@@ -37,6 +38,7 @@ import { VnpayModule } from './modules/vnpay';
       }),
       inject: [ConfigService],
     }),
+    ScheduleModule.forRoot(),
     ThrottlerModule.forRoot({
       throttlers: [
         {

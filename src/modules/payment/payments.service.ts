@@ -12,13 +12,15 @@ import { StatusPayment } from 'src/common/enum/status-payment.enum';
 import { VnpayService } from '../vnpay/vnpay.service';
 import { ProductCode } from 'vnpay';
 import { ConfigService } from '@nestjs/config';
+import { BookingsService } from '../booking/bookings.service';
 
 @Injectable()
 export class PaymentsService {
   constructor(
     @InjectModel(Payment.name) private paymentModel: SoftDeleteModel<PaymentDocument>,
     private readonly vnpayService: VnpayService, // Inject VnpayService
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    private readonly bookingService: BookingsService,
   ) { }
 
   async create(createPaymentDto: CreatePaymentDto, user: IUser, ipAddress?: string) {
@@ -206,9 +208,13 @@ export class PaymentsService {
         }
       );
 
-      // 8. TODO: Cập nhật trạng thái booking nếu thanh toán thành công
+      // Cập nhật trạng thái booking nếu thanh toán thành công
       if (newStatus === StatusPayment.Success) {
-
+        try {
+          await this.bookingService.confirmBooking(payment.booking_id.toString(), payment._id.toString());
+        } catch (bookingError) {
+          console.error('Error confirming booking:', bookingError);
+        }
       }
 
       // 9. Trả về response cho VNPay
@@ -224,5 +230,35 @@ export class PaymentsService {
         Message: 'Unknown error',
       };
     }
+  }
+
+  handleVnpayReturn = async (query: any) => {
+    const verify = this.vnpayService.verifyReturnUrl(query);
+    if (!verify.isSuccess) {
+      throw new BadRequestException('Invalid signature');
+    }
+    const { vnp_TxnRef, vnp_ResponseCode } = query;
+    const payment = await this.paymentModel.findOne({ code: vnp_TxnRef });
+    if (!payment) {
+      throw new NotFoundException('Payment not found');
+    }
+    let message = 'Giao dịch thất bại';
+    let isSuccess = false;
+
+    if (vnp_ResponseCode === '00') {
+      isSuccess = true;
+      message = 'Giao dịch thành công';
+    } else if (vnp_ResponseCode === '24') {
+      message = 'Giao dịch bị hủy bởi khách hàng';
+    } else {
+      message = 'Giao dịch thất bại (Lỗi ngân hàng hoặc thẻ)';
+    }
+
+    return {
+      isSuccess,      // Frontend dựa vào biến này để hiện Icon (Tick xanh / Chéo đỏ)
+      message,        // Frontend hiện dòng này lên màn hình
+      payment,        // Trả kèm payment để lấy info (mã đơn, số tiền...)
+      vnp_ResponseCode // Trả kèm mã gốc nếu Frontend muốn debug
+    };
   }
 }

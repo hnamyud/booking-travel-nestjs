@@ -2,8 +2,8 @@ import { BadRequestException, ConflictException, Injectable } from '@nestjs/comm
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
 import { IUser } from 'src/common/interfaces/user.interface';
-import mongoose, { mongo } from 'mongoose';
-import { InjectModel } from '@nestjs/mongoose';
+import mongoose, { Connection } from 'mongoose';
+import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { Booking, BookingDocument } from './schemas/booking.schema';
 import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import aqp from 'api-query-params';
@@ -17,6 +17,7 @@ export class BookingsService {
   constructor(
     @InjectModel(Booking.name) private bookingModel: SoftDeleteModel<BookingDocument>,
     @InjectModel(Tour.name) private tourModel: SoftDeleteModel<TourDocument>,
+    @InjectConnection() private readonly connection: Connection,
     private lockService: LockService,
   ) { }
   async create(createBookingDto: CreateBookingDto, user: IUser) {
@@ -28,21 +29,19 @@ export class BookingsService {
     } = createBookingDto;
 
     return this.lockService.withLock(`tour_booking_${tour_id}`, async () => {
-      const session = await mongoose.startSession();
+      const session = await this.connection.startSession();
       session.startTransaction();
 
       try {
-        const tour = await this.tourModel.findById({
-          tour_id,
-          availableSlots: { $gte: numberOfGuests }
-        });
+        const tour = await this.tourModel.findById(tour_id).session(session);
 
         if (!tour) {
-            // Có thể do không tìm thấy tour, hoặc do hết vé
-            // Check lại kỹ hơn để báo lỗi chính xác
-            const existingTour = await this.tourModel.findById(tour_id).session(session);
-            if (!existingTour) throw new BadRequestException('Tour not found');
-            throw new ConflictException('Not enough slots available');
+          throw new BadRequestException('Tour not found');
+        }
+
+        // ✅ FIX: Check availableSlots riêng
+        if (tour.availableSlots < numberOfGuests) {
+          throw new ConflictException('Not enough slots available');
         }
 
         const newBooking = await this.bookingModel.create([{
@@ -58,20 +57,24 @@ export class BookingsService {
 
         await this.tourModel.updateOne(
           { _id: tour_id },
-          { $inc: { 
-            bookedParticipants: numberOfGuests, 
-            availableSlots: -numberOfGuests
-          } },
+          {
+            $inc: {
+              bookedParticipants: numberOfGuests,
+              availableSlots: -numberOfGuests
+            }
+          },
           { session }
         );
 
         await session.commitTransaction();
         return newBooking[0];
       } catch (error) {
-        await session.abortTransaction();
+        if (session.inTransaction()) {
+          await session.abortTransaction();
+        }
         throw error;
       } finally {
-        session.endSession();
+        await session.endSession();
       }
     }, 15000);
   }
@@ -146,9 +149,9 @@ export class BookingsService {
 
     // TRAP: Khách thanh toán trễ, Booking đã bị Cronjob hủy do hết hạn
     if (booking.status === StatusBooking.Cancelled || booking.status === StatusBooking.Expired) {
-       // Ca khó: Tiền đã trừ nhưng vé đã hủy.
-       // Logic: Báo lỗi để Admin xử lý hoàn tiền thủ công hoặc tự động refund.
-       throw new ConflictException('Booking has been cancelled/expired');
+      // Ca khó: Tiền đã trừ nhưng vé đã hủy.
+      // Logic: Báo lỗi để Admin xử lý hoàn tiền thủ công hoặc tự động refund.
+      throw new ConflictException('Booking has been cancelled/expired');
     }
 
     if (booking.status === StatusBooking.Confirmed) {
@@ -156,7 +159,7 @@ export class BookingsService {
     }
 
     booking.status = StatusBooking.Confirmed;
-    booking.payment_status = StatusPayment.Paid;
+    booking.payment_status = StatusPayment.Success;
     booking.payment_id = new mongoose.Types.ObjectId(payment_id) as any;
     booking.confirmAt = new Date();
     await booking.save();
