@@ -28,7 +28,7 @@ export class VnpayService {
     }
 
     /**
-     * ✅ Build payment URL
+     * Build payment URL
      * @param options Payment options
      * @returns Payment URL string
      */
@@ -43,7 +43,7 @@ export class VnpayService {
     }
 
     /**
-     * ✅ Verify return URL from VNPay
+     * Verify return URL from VNPay
      * @param query Query parameters from return URL
      * @returns Verification result
      */

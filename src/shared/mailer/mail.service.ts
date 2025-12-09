@@ -23,7 +23,7 @@ export class MailService {
 
     async sendResetPasswordEmail(sendResetPasswordDto: SendResetPasswordDto) {
         // Kiểm tra rate limit
-        const rateLimitKey = `reset_rate_limit:${sendResetPasswordDto.email}`;
+        const rateLimitKey = `reset_rate_limit:${sendResetPasswordDto.email}`;0
         const attempts = await this.redisClient.get(rateLimitKey);
         if (attempts && parseInt(attempts) >= 5) {
             throw new Error('Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau.');
