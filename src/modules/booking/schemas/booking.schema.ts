@@ -38,6 +38,9 @@ export class Booking {
     note?: string;
 
     @Prop()
+    ticketCode?: string;
+
+    @Prop()
     createdAt: Date;
 
     @Prop()
@@ -45,6 +48,9 @@ export class Booking {
 
     @Prop()
     confirmAt: Date;
+
+    @Prop({default: false})
+    isUsed: boolean;
 
     @Prop()
     checkinAt: Date;

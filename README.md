@@ -22,7 +22,6 @@
 - **Hệ thống đặt chỗ**: Đặt tour với xử lý concurrency, tránh double-booking
 - **Thanh toán VNPay**: Tích hợp cổng thanh toán VNPay với IPN callback
 - **Đánh giá & Review**: Người dùng có thể đánh giá tour đã tham gia
-- **Dịch vụ bổ sung**: Vé máy bay, khách sạn, vé tham quan
 
 ### Advanced Features
 - **Concurrency Control**: Redis distributed locks để tránh race condition

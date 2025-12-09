@@ -11,6 +11,7 @@ import { Tour, TourDocument } from '../tour/schema/tour.schema';
 import { LockService } from 'src/common/services/lock.services';
 import { StatusBooking } from 'src/common/enum/status-booking.enum';
 import { StatusPayment } from 'src/common/enum/status-payment.enum';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class BookingsService {
@@ -37,6 +38,10 @@ export class BookingsService {
 
         if (!tour) {
           throw new BadRequestException('Tour not found');
+        }
+
+        if(!tour.isAvailable) {
+          throw new ConflictException('Tour is not available for booking');
         }
 
         // ✅ FIX: Check availableSlots riêng
@@ -147,6 +152,12 @@ export class BookingsService {
       throw new BadRequestException('Booking not found');
     }
 
+    const ticketCode = `TICKET-${Date.now()
+      .toString()
+      .slice(-4)}-${crypto.randomBytes(2)
+        .toString('hex')
+        .toUpperCase()}`;
+
     // TRAP: Khách thanh toán trễ, Booking đã bị Cronjob hủy do hết hạn
     if (booking.status === StatusBooking.Cancelled || booking.status === StatusBooking.Expired) {
       // Ca khó: Tiền đã trừ nhưng vé đã hủy.
@@ -162,6 +173,7 @@ export class BookingsService {
     booking.payment_status = StatusPayment.Success;
     booking.payment_id = new mongoose.Types.ObjectId(payment_id) as any;
     booking.confirmAt = new Date();
+    booking.ticketCode = ticketCode;
     await booking.save();
     return booking;
   }

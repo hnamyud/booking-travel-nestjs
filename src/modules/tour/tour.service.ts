@@ -90,7 +90,11 @@ export class TourService {
     }
 
     // Merge với filter gốc
-    const matchStage = { ...filter, ...customFilter };
+    const matchStage = { 
+      ...filter, 
+      ...customFilter,
+      isDeleted: { $ne: true }
+     };
 
     if (Object.keys(matchStage).length > 0) {
       pipeline.push({ $match: matchStage });
