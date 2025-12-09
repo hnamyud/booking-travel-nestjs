@@ -21,7 +21,6 @@
 - **Quản lý tour**: CRUD tour, lọc theo điểm đến, giá, ngày
 - **Hệ thống đặt chỗ**: Đặt tour với xử lý concurrency, tránh double-booking
 - **Thanh toán VNPay**: Tích hợp cổng thanh toán VNPay với IPN callback
-- **Quản lý điểm đến**: Thông tin chi tiết về các địa điểm du lịch
 - **Đánh giá & Review**: Người dùng có thể đánh giá tour đã tham gia
 - **Dịch vụ bổ sung**: Vé máy bay, khách sạn, vé tham quan
 
@@ -120,9 +119,6 @@ CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
 
-# Rate Limiting (optional - có giá trị mặc định)
-THROTTLE_TTL=60000
-THROTTLE_LIMIT=10
 ```
 
 ### Cấu hình MongoDB
@@ -161,7 +157,7 @@ npm run start:debug
 
 Ứng dụng sẽ chạy tại: `http://localhost:3000`
 
-API Documentation (Swagger): `http://localhost:3000/api`
+API Documentation (Swagger): `http://localhost:3000/docs`
 
 ## 🏗 Kiến trúc
 
@@ -181,9 +177,6 @@ src/
 │   ├── vnpay/                  # VNPay integration
 │   ├── destination/            # Destination management
 │   ├── review/                 # Review system
-│   ├── flight-tickets/         # Flight bookings
-│   ├── hotel-bookings/         # Hotel reservations
-│   ├── attraction-tickets/     # Attraction tickets
 │   ├── cloudinary/             # File upload
 │   └── redis/                  # Redis connection
 ├── common/
