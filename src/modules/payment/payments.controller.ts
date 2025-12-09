@@ -6,7 +6,7 @@ import { ResponseMessage, GetUser, Public } from 'src/core/decorator/customize.d
 import { IUser } from 'src/common/interfaces/user.interface';
 import { PoliciesGuard } from 'src/core/guards/policy.guard';
 import { CheckPolicies } from 'src/core/decorator/policy.decorator';
-import { Action } from 'src/common/enum/action.enum';
+import { Action } from 'src/core/abilities/action.enum';
 import { Payment } from './schemas/payment.schema';
 import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
 

@@ -3,7 +3,7 @@ import { UserService } from './user.service';
 import { UserController } from './user.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from './schema/user.schema';
-import { CaslModule } from 'src/modules/casl/casl.module';
+import { CaslModule } from 'src/core/abilities/casl.module';
 
 @Module({
   imports: [

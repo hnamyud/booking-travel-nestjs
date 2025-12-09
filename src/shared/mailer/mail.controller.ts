@@ -3,7 +3,7 @@ import { MailService } from './mail.service';
 import { MailerService } from '@nestjs-modules/mailer';
 import { Public, ResponseMessage } from 'src/core/decorator/customize.decorator';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
-import { SendResetPasswordDto } from '../auth/dto/reset-password.dto';
+import { SendResetPasswordDto } from 'src/modules/auth/dto/reset-password.dto';
 
 
 @ApiTags('Mail')

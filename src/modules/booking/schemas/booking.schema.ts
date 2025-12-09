@@ -45,6 +45,9 @@ export class Booking {
 
     @Prop()
     confirmAt: Date;
+
+    @Prop()
+    checkinAt: Date;
 }
 
 export const BookingSchema = SchemaFactory.createForClass(Booking);

@@ -4,7 +4,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { GetUser, Public, ResponseMessage } from 'src/core/decorator/customize.decorator';
 import { CheckPolicies } from 'src/core/decorator/policy.decorator';
-import { Action } from 'src/common/enum/action.enum';
+import { Action } from 'src/core/abilities/action.enum';
 import { User } from './schema/user.schema';
 import { PoliciesGuard } from 'src/core/guards/policy.guard';
 import { ChangePasswordDto } from './dto/change-password.dto';

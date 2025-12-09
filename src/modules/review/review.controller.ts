@@ -5,7 +5,7 @@ import { UpdateReviewDto } from './dto/update-review.dto';
 import { Public, ResponseMessage, GetUser } from 'src/core/decorator/customize.decorator';
 import { IUser } from 'src/common/interfaces/user.interface';
 import { PoliciesGuard } from 'src/core/guards/policy.guard';
-import { Action } from 'src/common/enum/action.enum';
+import { Action } from 'src/core/abilities/action.enum';
 import { Review } from './schema/review.schema';
 import { CheckPolicies } from 'src/core/decorator/policy.decorator';
 import { ApiBearerAuth, ApiBody, ApiSecurity, ApiTags } from '@nestjs/swagger';

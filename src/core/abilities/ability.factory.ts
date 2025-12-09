@@ -1,15 +1,15 @@
 
 import { Injectable } from '@nestjs/common';
 import { Ability, AbilityBuilder, AbilityClass, ExtractSubjectType, InferSubjects } from '@casl/ability';
-import { Action } from 'src/common/enum/action.enum';
+import { Action } from 'src/core/abilities/action.enum';
 import { UserRole } from 'src/common/enum/role.enum';
-import { User } from '../user/schema/user.schema';
-import { Booking } from '../booking/schemas/booking.schema';
-import { Tour } from '../tour/schema/tour.schema';
-import { Review } from '../review/schema/review.schema';
-import { Payment } from '../payment/schemas/payment.schema';
-import { Destination } from '../destination/schema/destination.schema';
 import { StatusBooking } from 'src/common/enum/status-booking.enum';
+import { User } from 'src/modules/user/schema/user.schema';
+import { Tour } from 'src/modules/tour/schema/tour.schema';
+import { Booking } from 'src/modules/booking/schemas/booking.schema';
+import { Destination } from 'src/modules/destination/schema/destination.schema';
+import { Review } from 'src/modules/review/schema/review.schema';
+import { Payment } from 'src/modules/payment/schemas/payment.schema';
 // Định nghĩa các subject (đối tượng) được phân quyền
 export type Subjects = InferSubjects<
   typeof User |

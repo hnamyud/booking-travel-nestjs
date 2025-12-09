@@ -4,7 +4,7 @@ import { CreateTourDto } from './dto/create-tour.dto';
 import { UpdateTourDto } from './dto/update-tour.dto';
 import { Public, ResponseMessage } from 'src/core/decorator/customize.decorator';
 import { PoliciesGuard } from 'src/core/guards/policy.guard';
-import { Action } from 'src/common/enum/action.enum';
+import { Action } from 'src/core/abilities/action.enum';
 import { CheckPolicies } from 'src/core/decorator/policy.decorator';
 import { Tour } from './schema/tour.schema';
 import { ApiBearerAuth, ApiBody, ApiSecurity, ApiTags } from '@nestjs/swagger';

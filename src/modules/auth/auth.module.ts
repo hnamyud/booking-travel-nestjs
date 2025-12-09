@@ -8,7 +8,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import ms from 'ms';
 import { AuthController } from './auth.controller';
 import { MongooseModule } from '@nestjs/mongoose';
-import { RedisModule } from 'src/modules/redis/redis.module';
+import { RedisModule } from 'src/shared/cache/redis.module';
 import { UserModule } from '../user/user.module';
 import { User, UserSchema } from '../user/schema/user.schema';
 

@@ -6,7 +6,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import mongoose from 'mongoose';
 import aqp from 'api-query-params';
-import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { CloudinaryService } from 'src/shared/upload/cloudinary.service';
 
 @Injectable()
 export class DestinationService {

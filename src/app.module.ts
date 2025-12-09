@@ -4,9 +4,8 @@ import { AppService } from './app.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { softDeletePlugin } from 'soft-delete-plugin-mongoose';
-import { CaslModule } from './modules/casl/casl.module';
-import { MailModule } from './modules/mail/mail.module';
-import { RedisModule } from './modules/redis/redis.module';
+import { CaslModule } from './core/abilities/casl.module';
+import { RedisModule } from './shared/cache/redis.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { AppThrottlerGuard } from './core/guards/app-throttler.guard';
@@ -15,7 +14,6 @@ import { AuthModule } from './modules/auth/auth.module';
 import { DestinationModule } from './modules/destination/destination.module';
 import { TourModule } from './modules/tour/tour.module';
 import { ReviewModule } from './modules/review/review.module';
-import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 import { PaymentsModule } from './modules/payment/payments.module';
 import { BookingsModule } from './modules/booking/bookings.module';
 import { LoggerMiddleware } from './core/middleware/logger.middleware';
@@ -23,6 +21,8 @@ import { HashAlgorithm, ignoreLogger } from 'vnpay';
 import { VnpayModuleOptions } from './modules/vnpay/interfaces/vnpay-module-option.interface';
 import { VnpayModule } from './modules/vnpay';
 import { ScheduleModule } from '@nestjs/schedule';
+import { CloudinaryModule } from './shared/upload/cloudinary.module';
+import { MailModule } from './shared/mailer/mail.module';
 
 
 @Module({

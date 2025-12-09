@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { CaslAbilityFactory } from 'src/modules/casl/ability.factory';
 import { CHECK_POLICIES_KEY, PolicyHandler } from 'src/core/decorator/policy.decorator';
+import { CaslAbilityFactory } from '../abilities/ability.factory';
 
 
 @Injectable()

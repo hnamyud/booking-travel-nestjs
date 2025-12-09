@@ -4,7 +4,7 @@ import { CreateDestinationDto } from './dto/create-destination.dto';
 import { UpdateDestinationDto } from './dto/update-destination.dto';
 import { Public, ResponseMessage } from 'src/core/decorator/customize.decorator';
 import { PoliciesGuard } from 'src/core/guards/policy.guard';
-import { Action } from 'src/common/enum/action.enum';
+import { Action } from 'src/core/abilities/action.enum';
 import { Destination } from './schema/destination.schema';
 import { CheckPolicies } from 'src/core/decorator/policy.decorator';
 import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';

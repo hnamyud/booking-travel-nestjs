@@ -3,7 +3,7 @@ import { TourService } from './tour.service';
 import { TourController } from './tour.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Tour, TourSchema } from './schema/tour.schema';
-import { CaslModule } from 'src/modules/casl/casl.module';
+import { CaslModule } from 'src/core/abilities/casl.module';
 
 @Module({
   imports: [

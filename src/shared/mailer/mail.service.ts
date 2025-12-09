@@ -4,8 +4,8 @@ import { MailerService } from '@nestjs-modules/mailer';
 import Redis from 'ioredis';
 import { randomInt } from 'crypto';
 import { ConfigService } from '@nestjs/config';
-import { UserService } from '../user/user.service';
-import { SendResetPasswordDto } from '../auth/dto/reset-password.dto';
+import { SendResetPasswordDto } from 'src/modules/auth/dto/reset-password.dto';
+import { UserService } from 'src/modules/user/user.service';
 
 @Injectable()
 export class MailService {

@@ -6,8 +6,8 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 import { join } from 'path';
-import { RedisModule } from 'src/modules/redis/redis.module';
-import { UserModule } from '../user/user.module';
+import { RedisModule } from 'src/shared/cache/redis.module';
+import { UserModule } from 'src/modules/user/user.module';
 
 @Module({
   imports: [

@@ -2,7 +2,7 @@ import { Controller, Delete, Param, Post, UploadedFiles, UseGuards, UseIntercept
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { PoliciesGuard } from 'src/core/guards/policy.guard';
-import { ImagesUploadDto } from './dto/images-upload.dto';
+import { ImagesUploadDto } from '../../shared/upload/dto/images-upload.dto';
 import { ResponseMessage } from 'src/core/decorator/customize.decorator';
 import { CloudinaryService } from './cloudinary.service';
 

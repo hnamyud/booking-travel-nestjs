@@ -3,7 +3,7 @@ import { ReviewService } from './review.service';
 import { ReviewController } from './review.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Review, ReviewSchema } from './schema/review.schema';
-import { CaslModule } from 'src/modules/casl/casl.module';
+import { CaslModule } from 'src/core/abilities/casl.module';
 
 @Module({
   imports: [

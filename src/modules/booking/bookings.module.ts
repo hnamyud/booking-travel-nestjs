@@ -3,10 +3,10 @@ import { BookingsService } from './bookings.service';
 import { BookingsController } from './bookings.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Booking, BookingSchema } from './schemas/booking.schema';
-import { CaslModule } from 'src/modules/casl/casl.module';
+import { CaslModule } from 'src/core/abilities/casl.module';
 import { LockService } from 'src/common/services/lock.services';
 import { Tour, TourSchema } from '../tour/schema/tour.schema';
-import { RedisModule } from '../redis/redis.module';
+import { RedisModule } from '../../shared/cache/redis.module';
 import { PaymentsModule } from '../payment/payments.module';
 import { BookingScheduler } from './booking.scheduler';
 

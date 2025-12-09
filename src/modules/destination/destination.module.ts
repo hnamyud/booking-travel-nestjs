@@ -3,8 +3,8 @@ import { DestinationService } from './destination.service';
 import { DestinationController } from './destination.controller';
 import { Destination, DestinationSchema } from './schema/destination.schema';
 import { MongooseModule } from '@nestjs/mongoose';
-import { CaslModule } from 'src/modules/casl/casl.module';
-import { CloudinaryModule } from '../cloudinary/cloudinary.module';
+import { CaslModule } from 'src/core/abilities/casl.module';
+import { CloudinaryModule } from 'src/shared/upload/cloudinary.module';
 
 @Module({
   imports: [
