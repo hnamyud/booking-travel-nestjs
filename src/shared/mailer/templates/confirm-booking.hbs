@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xác nhận đặt vé thành công</title>
+    <style>
+        /* Reset CSS cơ bản cho email */
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+            color: #333333;
+        }
+        table {
+            border-spacing: 0;
+            width: 100%;
+        }
+        /* Container chính giới hạn chiều rộng 600px */
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .header {
+            background-color: #0077b6; /* Màu xanh nước biển (Ocean Blue) */
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            color: #ffffff;
+            margin: 0;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .content {
+            padding: 30px;
+        }
+        .greeting {
+            font-size: 16px;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+        .qr-section {
+            text-align: center;
+            background-color: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .qr-code-img {
+            max-width: 200px;
+            height: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background: #fff;
+        }
+        .ticket-code {
+            font-size: 18px;
+            font-weight: bold;
+            color: #0077b6;
+            margin-top: 10px;
+            letter-spacing: 1px;
+        }
+        .details-table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        .details-table td {
+            padding: 12px 0;
+            border-bottom: 1px solid #eeeeee;
+        }
+        .details-label {
+            color: #666666;
+            width: 40%;
+            font-size: 14px;
+        }
+        .details-value {
+            font-weight: bold;
+            text-align: right;
+            font-size: 14px;
+        }
+        .total-row td {
+            border-top: 2px solid #333;
+            border-bottom: none;
+            padding-top: 15px;
+            font-size: 18px;
+            color: #0077b6;
+        }
+        .footer {
+            background-color: #333333;
+            color: #ffffff;
+            text-align: center;
+            padding: 20px;
+            font-size: 12px;
+        }
+        .footer a {
+            color: #0077b6;
+            text-decoration: none;
+        }
+        /* Responsive cho mobile */
+        @media only screen and (max-width: 600px) {
+            .container { width: 100% !important; border-radius: 0; }
+            .content { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div style="padding: 20px 0;">
+        <div class="container">
+            <!-- Header -->
+            <div class="header">
+                <!-- Thay logo của bạn vào đây nếu có -->
+                <h1>VÉ ĐIỆN TỬ CỦA BẠN</h1>
+            </div>
+
+            <!-- Body -->
+            <div class="content">
+                <div class="greeting">
+                    Xin chào <strong>{{customerName}}</strong>,<br><br>
+                    Cảm ơn bạn đã hoàn tất thanh toán. Dưới đây là vé điện tử cho chuyến đi sắp tới của bạn. Vui lòng xuất trình mã QR này tại quầy check-in.
+                </div>
+
+                <!-- QR Code Section -->
+                <div class="qr-section">
+                    <div style="margin-bottom: 10px; color: #666; font-size: 12px;">QUÉT MÃ ĐỂ CHECK-IN</div>
+                    
+                    <!-- Hiển thị QR Code (Hỗ trợ cả Base64 hoặc CID) -->
+                    <img src="{{qrCode}}" alt="Ticket QR Code" class="qr-code-img" />
+                    
+                    <div class="ticket-code">{{ticketCode}}</div>
+                </div>
+
+                <!-- Thông tin chi tiết -->
+                <table class="details-table">
+                    <tr>
+                        <td class="details-label">Tour</td>
+                        <td class="details-value">{{tourName}}</td>
+                    </tr>
+                    <tr>
+                        <td class="details-label">Ngày khởi hành</td>
+                        <td class="details-value">{{startDate}}</td>
+                    </tr>
+                    <tr>
+                        <td class="details-label">Số lượng khách</td>
+                        <td class="details-value">{{numberOfGuests}} người</td>
+                    </tr>
+                    <tr>
+                        <td class="details-label">Phương thức</td>
+                        <td class="details-value">{{provider}} / Đã thanh toán</td>
+                    </tr>
+                    <tr class="total-row">
+                        <td class="details-label"><strong>Tổng tiền</strong></td>
+                        <td class="details-value">{{totalPrice}}</td>
+                    </tr>
+                </table>
+
+                <div style="margin-top: 30px; font-size: 13px; color: #888; text-align: center;">
+                    <p>Nếu bạn có thắc mắc, vui lòng trả lời email này hoặc liên hệ hotline 1900 xxxx.</p>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer">
+                &copy; 2025 Nekko Travel. All rights reserved.<br>
+                <a href="#">Điều khoản sử dụng</a> | <a href="#">Chính sách bảo mật</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

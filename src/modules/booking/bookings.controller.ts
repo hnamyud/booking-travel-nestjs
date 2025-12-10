@@ -9,6 +9,7 @@ import { CheckPolicies } from 'src/core/decorator/policy.decorator';
 import { Action } from 'src/core/abilities/action.enum';
 import { Booking } from './schemas/booking.schema';
 import { ApiBearerAuth, ApiBody, ApiSecurity, ApiTags } from '@nestjs/swagger';
+import { VerifyTicketDto } from './dto/verify-ticket.dto';
 
 @ApiTags('Bookings')
 @Controller('bookings')
@@ -83,5 +84,17 @@ export class BookingsController {
   @ResponseMessage('Delete a Booking')
   remove(@Param('id') id: string) {
     return this.bookingsService.remove(id);
+  }
+
+  @Post('verify-ticket')
+  @CheckPolicies({
+    handle: (ability) => ability.can(Action.CheckIn, Booking),
+    message: 'Bạn không có quyền xác thực vé'
+  })
+  @ApiBearerAuth('access-token')
+  @ApiBody({ type: VerifyTicketDto })
+  @ResponseMessage('Verify a ticket')
+  async verifyTicket(@Body() verifyTicketDto: VerifyTicketDto) {
+    return this.bookingsService.verifyTicket(verifyTicketDto);
   }
 }

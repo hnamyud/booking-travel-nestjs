@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
 import { IUser } from 'src/common/interfaces/user.interface';
@@ -12,13 +12,18 @@ import { LockService } from 'src/common/services/lock.services';
 import { StatusBooking } from 'src/common/enum/status-booking.enum';
 import { StatusPayment } from 'src/common/enum/status-payment.enum';
 import * as crypto from 'crypto';
+import { MailService } from 'src/shared/mailer/mail.service';
+import { Payment, PaymentDocument } from '../payment/schemas/payment.schema';
+import { VerifyTicketDto } from './dto/verify-ticket.dto';
 
 @Injectable()
 export class BookingsService {
   constructor(
     @InjectModel(Booking.name) private bookingModel: SoftDeleteModel<BookingDocument>,
     @InjectModel(Tour.name) private tourModel: SoftDeleteModel<TourDocument>,
+    @InjectModel(Payment.name) private paymentModel: SoftDeleteModel<PaymentDocument>,
     @InjectConnection() private readonly connection: Connection,
+    private mailService: MailService,
     private lockService: LockService,
   ) { }
   async create(createBookingDto: CreateBookingDto, user: IUser) {
@@ -146,7 +151,7 @@ export class BookingsService {
   }
 
   confirmBooking = async (id: string, payment_id: string) => {
-    const booking = await this.bookingModel.findById(id);
+    const booking = await this.bookingModel.findById(id).populate('tour_id');
 
     if (!booking) {
       throw new BadRequestException('Booking not found');
@@ -169,12 +174,46 @@ export class BookingsService {
       return booking;
     }
 
+    const payment = await this.paymentModel.findById(payment_id);
+    if (!payment) throw new NotFoundException('Payment info not found');
+    const tourData = booking.tour_id as any;
+
     booking.status = StatusBooking.Confirmed;
     booking.payment_status = StatusPayment.Success;
     booking.payment_id = new mongoose.Types.ObjectId(payment_id) as any;
     booking.confirmAt = new Date();
     booking.ticketCode = ticketCode;
     await booking.save();
+
+    await this.mailService.sendConfirmationEmail(
+      booking.contactInfo.email,
+      booking.contactInfo.fullName,
+      ticketCode,
+      tourData.name,
+      new Date(tourData.timeStart),
+      booking.numberOfGuests,
+      payment.provider,
+      booking.totalPrice
+    ).catch(err => {
+        console.error('Lỗi gửi mail vé:', err);
+    });
+
     return booking;
+  }
+
+  verifyTicket = async (verifyTicketDto: VerifyTicketDto) => {
+    const booking = await this.bookingModel.findOne({ ticketCode: verifyTicketDto.ticketCode });
+    if (!booking) throw new NotFoundException('Vé không tồn tại');
+    if (booking.status !== StatusBooking.Confirmed) throw new BadRequestException('Vé chưa thanh toán hoặc đã hủy');
+    if (booking.isUsed) throw new BadRequestException('Vé đã được sử dụng');
+    
+    booking.isUsed = true;
+    booking.checkinAt = new Date();
+    await booking.save();
+    
+    return {
+      valid: true,
+      message: 'Xác thực thành công!'
+    };
   }
 }

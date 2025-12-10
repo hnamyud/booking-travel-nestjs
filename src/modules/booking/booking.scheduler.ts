@@ -6,6 +6,7 @@ import { Tour, TourDocument } from '../tour/schema/tour.schema';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { StatusBooking } from 'src/common/enum/status-booking.enum';
 import { StatusPayment } from 'src/common/enum/status-payment.enum';
+import { Payment, PaymentDocument } from '../payment/schemas/payment.schema';
 
 @Injectable()
 export class BookingScheduler {
@@ -13,8 +14,9 @@ export class BookingScheduler {
 
     constructor(
         @InjectModel(Booking.name) private bookingModel: Model<BookingDocument>,
-        @InjectModel(Tour.name) private tourModel: Model<TourDocument>, // 💉 Inject Tour Model
-        @InjectConnection() private readonly connection: Connection, // 💉 Inject Connection để tạo Session
+        @InjectModel(Tour.name) private tourModel: Model<TourDocument>,
+        @InjectModel(Payment.name) private paymentModel: Model<PaymentDocument>,
+        @InjectConnection() private readonly connection: Connection, // Inject Connection để tạo Session
     ) { }
 
     @Cron(CronExpression.EVERY_MINUTE)
@@ -40,13 +42,44 @@ export class BookingScheduler {
                 try {
                     // Cập nhật trạng thái booking thành Expired
                     const bookingToUpdate = await this.bookingModel.findOneAndUpdate(
-                        {_id: booking._id, status: StatusBooking.Pending},
-                        { $set: { status: StatusBooking.Expired, updatedAt: new Date(), payment_status: StatusPayment.Failed } },
-                        { session, new: true }
+                        {
+                            _id: booking._id, 
+                            status: StatusBooking.Pending
+                        },
+                        { 
+                            $set: { 
+                                status: StatusBooking.Expired, 
+                                updatedAt: new Date(), 
+                                payment_status: StatusPayment.Failed 
+                            } 
+                        },
+                        { 
+                            session, 
+                            new: true 
+                        }
                     );
                     if (!bookingToUpdate) {
                         await session.abortTransaction();
                         return;
+                    }
+
+                    // Cập nhật trạng thái payment thành Failed
+                    if(booking.payment_id) {
+                        await this.paymentModel.updateOne(
+                        { 
+                            _id: booking.payment_id, 
+                            status: StatusPayment.Pending 
+                        },
+                        { 
+                            $set: { 
+                                status: StatusPayment.Failed, 
+                                updatedAt: new Date() 
+                            } 
+                        },
+                        { 
+                            session,  
+                            new: true 
+                        });
                     }
 
                     // Logic: Cập nhật lại số lượng vé trong Tour

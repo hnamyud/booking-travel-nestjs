@@ -57,6 +57,7 @@ export class CaslAbilityFactory {
           ]
         );
         can(Action.Update, Booking, { status: StatusBooking.Pending });
+        can(Action.CheckIn, Booking, { status: StatusBooking.Confirmed });
         can([Action.Read, Action.Read_All], Tour);
         can([Action.Read, Action.Read_All, Action.Delete], Review);
         can([Action.Read], User);

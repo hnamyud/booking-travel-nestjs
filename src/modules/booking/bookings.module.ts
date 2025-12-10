@@ -9,15 +9,19 @@ import { Tour, TourSchema } from '../tour/schema/tour.schema';
 import { RedisModule } from '../../shared/cache/redis.module';
 import { PaymentsModule } from '../payment/payments.module';
 import { BookingScheduler } from './booking.scheduler';
+import { Payment, PaymentSchema } from '../payment/schemas/payment.schema';
+import { MailModule } from 'src/shared/mailer/mail.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: Booking.name, schema: BookingSchema },
-      { name: Tour.name, schema: TourSchema }
+      { name: Tour.name, schema: TourSchema },
+      { name: Payment.name, schema: PaymentSchema },
     ]),
     CaslModule,
-    RedisModule
+    RedisModule,
+    MailModule 
   ],
   controllers: [BookingsController],
   providers: [

@@ -1,6 +1,5 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { MailService } from './mail.service';
-import { MailerService } from '@nestjs-modules/mailer';
 import { Public, ResponseMessage } from 'src/core/decorator/customize.decorator';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { SendResetPasswordDto } from 'src/modules/auth/dto/reset-password.dto';
@@ -11,7 +10,6 @@ import { SendResetPasswordDto } from 'src/modules/auth/dto/reset-password.dto';
 export class MailController {
   constructor(
     private readonly mailService: MailService,
-    private mailerService: MailerService,
   ) {}
 
   @Post('reset-password')
@@ -23,4 +21,27 @@ export class MailController {
   ) {
     return this.mailService.sendResetPasswordEmail(sendResetPasswordDto);
   }
+
+  // @Post('qr-test')
+  // @Public()
+  // async qrTest() {
+  //   const email = 'prezzgts@gmail.com',
+  //     fullName = 'John Doe',
+  //     token = 'ABC123XYZ',
+  //     tourName = 'Amazing Thailand Tour',
+  //     tourDate = new Date('2024-12-25'),
+  //     numberOfGuests = 2,
+  //     paymentProvider = 'VNPAY',
+  //     totalPrice = 5000000;
+  //   await this.mailService.sendConfirmationEmail(
+  //     email,
+  //     fullName,
+  //     token,
+  //     tourName,
+  //     tourDate,
+  //     numberOfGuests,
+  //     paymentProvider,
+  //     totalPrice,
+  //   );
+  // }
 }

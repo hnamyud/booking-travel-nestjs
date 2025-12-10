@@ -8,12 +8,14 @@ import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handleba
 import { join } from 'path';
 import { RedisModule } from 'src/shared/cache/redis.module';
 import { UserModule } from 'src/modules/user/user.module';
+import { QRCodeModule } from '../qrcode/qrcode.module';
 
 @Module({
   imports: [
     ConfigModule,       
     RedisModule, 
     UserModule,
+    QRCodeModule,
     MailerModule.forRootAsync({
       useFactory: async (config: ConfigService) => ({
         transport: {
@@ -34,10 +36,11 @@ import { UserModule } from 'src/modules/user/user.module';
         preview: config.get<string>('EMAIL_PREVIEW') === 'true' ? true : false,
       }),
       inject: [ConfigService],
-      imports: [RedisModule],
+      imports: [RedisModule, QRCodeModule],
     }),
   ],
   controllers: [MailController],
-  providers: [MailService]
+  providers: [MailService],
+  exports: [MailService]
 })
 export class MailModule { }
