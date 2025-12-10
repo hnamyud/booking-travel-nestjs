@@ -41,6 +41,14 @@ export class CaslAbilityFactory {
       case UserRole.Admin:
         can(Action.Manage, 'all');
         cannot(Action.Delete, User, { role: UserRole.Admin }); // Không được xóa Admin
+        // Admin không được tự đặt tour
+        cannot(Action.Create, Booking);
+
+        // Admin không được tự thanh toán
+        cannot(Action.Create, Payment);
+
+        // Admin không được viết Review (quan trọng nhất)
+        cannot(Action.Create, Review);
         break;
       // *********************
       // * CASE 2: MODERATOR *

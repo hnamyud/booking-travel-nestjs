@@ -61,26 +61,22 @@ export class BookingScheduler {
                     if (!bookingToUpdate) {
                         await session.abortTransaction();
                         return;
-                    }
-
-                    // Cập nhật trạng thái payment thành Failed
-                    if(booking.payment_id) {
-                        await this.paymentModel.updateOne(
-                        { 
-                            _id: booking.payment_id, 
-                            status: StatusPayment.Pending 
+                    }    
+                    
+                    // Tìm tất cả payment đang chờ của booking này và hủy hết
+                    await this.paymentModel.updateMany(
+                        {
+                            booking_id: booking._id, // Tìm theo booking_id
+                            status: StatusPayment.Pending // Chỉ hủy những cái đang chờ
                         },
-                        { 
-                            $set: { 
-                                status: StatusPayment.Failed, 
-                                updatedAt: new Date() 
-                            } 
+                        {
+                            $set: {
+                                status: StatusPayment.Failed,
+                                updatedAt: new Date()
+                            }
                         },
-                        { 
-                            session,  
-                            new: true 
-                        });
-                    }
+                        { session }  
+                    );
 
                     // Logic: Cập nhật lại số lượng vé trong Tour
                     await this.tourModel.updateOne(

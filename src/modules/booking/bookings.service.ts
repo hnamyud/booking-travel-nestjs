@@ -45,7 +45,7 @@ export class BookingsService {
           throw new BadRequestException('Tour not found');
         }
 
-        if(!tour.isAvailable) {
+        if (!tour.isAvailable) {
           throw new ConflictException('Tour is not available for booking');
         }
 
@@ -127,23 +127,72 @@ export class BookingsService {
   }
 
   async update(id: string, updateBookingDto: UpdateBookingDto) {
-    const { ...updateData } = updateBookingDto;
+    const booking = await this.bookingModel.findById(id);
+    if (!booking) throw new NotFoundException('Booking not found');
 
-    // Validate ObjectId
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new BadRequestException('ID không hợp lệ');
+    // VALIDATE TRẠNG THÁI (STATE MACHINE)
+    if (updateBookingDto.status && updateBookingDto.status !== booking.status) {
+      this.validateStatusTransition(booking.status, updateBookingDto.status);
+
+      // XỬ LÝ SIDE EFFECT (QUAN TRỌNG)
+      await this.handleSideEffects(booking, updateBookingDto.status);
     }
 
-    const result = await this.bookingModel.updateOne(
-      { _id: id },
-      { $set: updateData } // Sử dụng $set operator
-    );
-    return result;
+    // Update các field khác (contactInfo, note...)
+    Object.assign(booking, updateBookingDto);
+    return booking.save();
+  }
+
+  // Helper chức năng kiểm tra chuyển trạng thái hợp lệ
+  private validateStatusTransition(oldStatus: StatusBooking, newStatus: StatusBooking) {
+    const validTransitions = {
+      [StatusBooking.Pending]: [StatusBooking.Confirmed, StatusBooking.Cancelled],
+      [StatusBooking.Confirmed]: [StatusBooking.Completed, StatusBooking.Cancelled],
+      // Các trạng thái còn lại là "Ngõ cụt", mảng rỗng []
+      [StatusBooking.Cancelled]: [],
+      [StatusBooking.Expired]: [],
+      [StatusBooking.Failed]: [],
+      [StatusBooking.Completed]: [],
+    };
+
+    const allowed = validTransitions[oldStatus] || [];
+
+    if (!allowed.includes(newStatus)) {
+      throw new BadRequestException(
+        `Không thể chuyển trạng thái từ ${oldStatus} sang ${newStatus}`
+      );
+    }
+  }
+
+  // Helper chức năng xử lý các tác động phụ khi đổi trạng thái
+  private async handleSideEffects(booking: BookingDocument, newStatus: StatusBooking) {
+    // PENDING/CONFIRMED -> CANCELLED (Khách hủy hoặc Admin hủy)
+    // => Phải TRẢ LẠI KHO (vì lúc create mình đã trừ rồi)
+    if (newStatus === StatusBooking.Cancelled) {
+      await this.tourModel.updateOne(
+        { _id: booking.tour_id },
+        { $inc: { availableSlots: booking.numberOfGuests, bookedParticipants: -booking.numberOfGuests } }
+      );
+    }
   }
 
   async remove(id: string) {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       throw new BadRequestException(`Not found booking`);
+    }
+    const booking = await this.bookingModel.findById(id);
+    const holdingSlotStatuses = [StatusBooking.Pending, StatusBooking.Confirmed];
+
+    if (holdingSlotStatuses.includes(booking.status)) {
+      await this.tourModel.updateOne(
+        { _id: booking.tour_id },
+        {
+          $inc: {
+            availableSlots: booking.numberOfGuests,
+            bookedParticipants: -booking.numberOfGuests
+          }
+        }
+      );
     }
     return this.bookingModel.softDelete({
       _id: id
@@ -180,7 +229,6 @@ export class BookingsService {
 
     booking.status = StatusBooking.Confirmed;
     booking.payment_status = StatusPayment.Success;
-    booking.payment_id = new mongoose.Types.ObjectId(payment_id) as any;
     booking.confirmAt = new Date();
     booking.ticketCode = ticketCode;
     await booking.save();
@@ -195,8 +243,45 @@ export class BookingsService {
       payment.provider,
       booking.totalPrice
     ).catch(err => {
-        console.error('Lỗi gửi mail vé:', err);
+      console.error('Lỗi gửi mail vé:', err);
     });
+
+    return booking;
+  }
+
+  cancelBooking = async (id: string) => {
+    const booking = await this.bookingModel.findById(id);
+    if (!booking) {
+      throw new BadRequestException('Booking not found');
+    }
+
+    const terminalStatuses = [
+      StatusBooking.Cancelled,
+      StatusBooking.Expired,
+      StatusBooking.Failed
+    ];
+    if (terminalStatuses.includes(booking.status)) {
+      throw new BadRequestException(`Booking đã ở trạng thái ${booking.status}, không thể hủy tiếp.`);
+    }
+    if (booking.status === StatusBooking.Completed) {
+      throw new BadRequestException('Đơn đã hoàn thành, không thể hủy ngang. Vui lòng dùng chức năng Hoàn tiền.');
+    }
+
+    booking.status = StatusBooking.Cancelled;
+    booking.payment_status = StatusPayment.Failed;
+    booking.updatedAt = new Date();
+    await booking.save();
+
+    // Logic: Cập nhật lại số lượng vé trong Tour
+    await this.tourModel.updateOne(
+      { _id: booking.tour_id },
+      {
+        $inc: {
+          availableSlots: booking.numberOfGuests,
+          bookedParticipants: -booking.numberOfGuests
+        }
+      }
+    );
 
     return booking;
   }
@@ -206,11 +291,11 @@ export class BookingsService {
     if (!booking) throw new NotFoundException('Vé không tồn tại');
     if (booking.status !== StatusBooking.Confirmed) throw new BadRequestException('Vé chưa thanh toán hoặc đã hủy');
     if (booking.isUsed) throw new BadRequestException('Vé đã được sử dụng');
-    
+
     booking.isUsed = true;
     booking.checkinAt = new Date();
     await booking.save();
-    
+
     return {
       valid: true,
       message: 'Xác thực thành công!'

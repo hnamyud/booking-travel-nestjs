@@ -18,19 +18,23 @@
 
 ### Core Features
 - **Quản lý người dùng**: Đăng ký, đăng nhập, phân quyền với CASL
-- **Quản lý tour**: CRUD tour, lọc theo điểm đến, giá, ngày
+- **Quản lý tour**: CRUD tour với soft delete, lọc theo điểm đến, giá, ngày
 - **Hệ thống đặt chỗ**: Đặt tour với xử lý concurrency, tránh double-booking
 - **Thanh toán VNPay**: Tích hợp cổng thanh toán VNPay với IPN callback
+- **Email Service**: Gửi email xác nhận booking với QR code ticket
+- **Quản lý điểm đến**: Thông tin chi tiết về các địa điểm du lịch
 - **Đánh giá & Review**: Người dùng có thể đánh giá tour đã tham gia
 
 ### Advanced Features
-- **Concurrency Control**: Redis distributed locks để tránh race condition
+- **Concurrency Control**: Redis distributed locks để tránh race condition khi đặt tour
 - **Auto Expiry Bookings**: Scheduler tự động hủy booking sau 15 phút nếu chưa thanh toán
-- **Soft Delete**: Dữ liệu không bị xóa vĩnh viễn, có thể khôi phục
+- **Soft Delete**: Dữ liệu không bị xóa vĩnh viễn, có thể khôi phục (aggregation cần filter manual)
 - **File Upload**: Upload ảnh lên Cloudinary với validation
-- **Rate Limiting**: Bảo vệ API khỏi spam và DDoS
+- **Rate Limiting**: Bảo vệ API khỏi spam và DDoS (3-tier protection)
 - **Security Headers**: Helmet configuration với CSP, HSTS
 - **Request Logging**: Middleware ghi log mọi request với unique ID
+- **Email with QR Code**: Tự động gửi ticket với mã QR sau khi thanh toán thành công
+- **OTP Reset Password**: Hệ thống reset mật khẩu qua email với OTP (5 phút expire)
 
 ## 🛠 Công nghệ sử dụng
 
@@ -59,6 +63,8 @@
 - **vnpay**: VNPay payment gateway SDK
 - **Cloudinary**: Image storage và CDN
 - **ioredis**: Redis client cho Node.js
+- **@nestjs-modules/mailer**: Email service với Handlebars templates
+- **qrcode**: QR code generation cho booking tickets
 
 ### Background Jobs
 - **@nestjs/schedule v4.1.1**: Cron jobs và task scheduling
@@ -173,17 +179,27 @@ src/
 │   │   ├── booking.scheduler.ts
 │   │   └── schemas/
 │   ├── payment/                # Payment processing
-│   ├── vnpay/                  # VNPay integration
 │   ├── destination/            # Destination management
 │   ├── review/                 # Review system
-│   ├── cloudinary/             # File upload
-│   └── redis/                  # Redis connection
+│   └── vnpay/                  # VNPay integration
+├── shared/
+│   ├── cache/
+│   │   └── redis.module.ts     # Redis connection
+│   ├── cloudinary/             # File upload service
+│   ├── mailer/                 # Email service
+│   │   ├── mail.service.ts
+│   │   └── templates/          # Handlebars email templates
+│   │       ├── reset-password.hbs
+│   │       └── confirm-booking.hbs
+│   └── qrcode/                 # QR code generation
 ├── common/
-│   └── services/
-│       └── lock.service.ts     # Distributed locking
+│   ├── services/
+│   │   └── lock.service.ts     # Distributed locking
+│   └── interfaces/             # Shared interfaces
 ├── config/
 │   └── helmet.config.ts        # Security headers
 ├── core/
+│   ├── abilities/              # CASL authorization
 │   ├── middleware/
 │   │   └── logger.middleware.ts
 │   └── transform.interceptor.ts
@@ -241,6 +257,29 @@ User completes booking → PaymentsService.create()
                       → Update payment status
                       → BookingsService.confirmBooking()
                       → Update booking status
+                      → MailService.sendConfirmationEmail()
+                      → Generate QR code ticket
+                      → Send email with ticket
+```
+
+### Email Flow
+
+```
+Reset Password:
+User request reset → MailService.sendResetPasswordEmail()
+                  → Generate 6-digit OTP
+                  → Store in Redis (5 min expire)
+                  → Send email with OTP
+                  → User submits OTP
+                  → Validate and reset password
+
+Booking Confirmation:
+Payment success → BookingsService.confirmBooking()
+               → MailService.sendConfirmationEmail()
+               → QRCodeService.generateQrCodeAsBuffer(ticketCode)
+               → Render Handlebars template
+               → Attach QR code image
+               → Send email to customer
 ```
 
 ### Scheduler Flow
@@ -287,6 +326,7 @@ GET    /api/bookings/:id       - Lấy chi tiết booking
 POST   /api/bookings           - Tạo booking mới (với Redis lock)
 PATCH  /api/bookings/:id       - Cập nhật booking
 DELETE /api/bookings/:id       - Hủy booking
+POST   /api/bookings/:id/verify - Verify ticket bằng QR code
 ```
 
 ### Payments
@@ -294,6 +334,14 @@ DELETE /api/bookings/:id       - Hủy booking
 POST   /api/payments           - Tạo payment và redirect VNPay
 POST   /api/payments/vnpay-ipn - VNPay IPN callback (webhook)
 GET    /api/payments/vnpay-return - VNPay return URL
+```
+
+### Email
+```
+POST   /api/mail/send-reset-password - Gửi OTP reset password
+                                       Body: { email: string }
+                                       Response: OTP gửi qua email (5 phút expire)
+                                       Rate limit: 5 lần/15 phút
 ```
 
 ### Destinations
@@ -357,6 +405,8 @@ POST   /api/upload/images      - Upload ảnh lên Cloudinary
    - Soft delete (dữ liệu không bị xóa vĩnh viễn)
    - MongoDB transactions cho ACID operations
    - Input validation với class-validator
+   - OTP reset password với Redis expiration (5 phút)
+   - Email rate limiting: 5 requests/15 phút
 
 5. **Concurrency Control**
    - Redis distributed locks cho booking system
@@ -368,6 +418,11 @@ POST   /api/upload/images      - Upload ảnh lên Cloudinary
    - Secure hash algorithm (SHA256/SHA512)
    - IPN callback validation
 
+7. **Email Security**
+   - OTP with short expiration (5 minutes)
+   - Rate limiting on reset password requests
+   - Secure email templates without sensitive data exposure
+
 ### Best Practices
 
 - Sử dụng environment variables cho sensitive data
@@ -376,6 +431,43 @@ POST   /api/upload/images      - Upload ảnh lên Cloudinary
 - Sử dụng HTTPS trên production
 - Regular dependency updates
 - Monitor logs cho suspicious activities
+- **Email templates**: Đặt trong `src/shared/mailer/templates/` và config `nest-cli.json` để auto-copy khi build
+- **Soft delete với aggregation**: Phải thêm manual filter `{ isDeleted: { $ne: true } }` vì plugin không tự động
+
+## 🐛 Common Issues & Solutions
+
+### 1. Email templates không tìm thấy sau build
+**Lỗi**: `ENOENT: no such file or directory, open 'dist/shared/shared/mailer/templates/...'`
+
+**Giải pháp**:
+- Check `nest-cli.json` có config `assets` để copy file `.hbs`
+- Đảm bảo `dir: join(__dirname, 'templates')` trong `mail.module.ts`
+- Rebuild: `npm run build`
+
+### 2. Soft delete không hoạt động với aggregation
+**Vấn đề**: Tour đã xóa (`isDeleted: true`) vẫn hiện trong `findAll()` khi dùng `aggregate()`
+
+**Giải pháp**: Thêm manual filter:
+```typescript
+const matchStage = { 
+  ...filter, 
+  isDeleted: { $ne: true } // ✅ Phải thêm khi dùng aggregate
+};
+```
+
+### 3. Dependency injection không tìm thấy service
+**Lỗi**: `Nest can't resolve dependencies of the XService (..., YService, ...)`
+
+**Giải pháp**:
+1. Export service từ module chứa nó
+2. Import module đó vào module cần dùng
+3. Nếu dùng Mongoose model, phải `MongooseModule.forFeature([{ name: X, schema: XSchema }])` trong module cần dùng
+
+### 4. VNPay payment callback không hoạt động
+**Check**:
+- `VNPAY_RETURN_URL` phải là public URL (dùng ngrok khi dev local)
+- Verify signature trong `handleVnpayIpn()`
+- Check logs để debug
 
 ## 🧪 Testing
 

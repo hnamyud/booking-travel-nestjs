@@ -36,7 +36,13 @@ async function bootstrap() {
   app.useGlobalGuards(
     new JwtAuthGuard(reflector),
   );
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(new ValidationPipe(
+    { 
+      whitelist: true, // Tự động bỏ các field không có trong DTO
+      forbidNonWhitelisted: true, // (Tùy chọn) Báo lỗi luôn nếu gửi field lạ
+      transform: true
+    }
+  ));
   // Transform response from controller
   app.useGlobalInterceptors(new TransformInterceptor(reflector));
   //Config versoning
@@ -56,11 +62,6 @@ async function bootstrap() {
       - Most endpoints require JWT Bearer token
       - Get token from \`/auth/login\` endpoint
       - Use "Authorize" button below to set token globally
-      
-      ### 🛡️ CSRF Protection  
-      - POST/PUT/PATCH/DELETE requests need CSRF token
-      - Get CSRF token from \`/csrf-token\` endpoint
-      - Include in \`X-CSRF-Token\` header
       
       ### 📱 API Versioning
       - All endpoints are prefixed with \`/api/v1/\`

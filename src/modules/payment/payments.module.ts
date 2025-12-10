@@ -4,13 +4,13 @@ import { PaymentsController } from './payments.controller';
 import { Payment, PaymentSchema } from './schemas/payment.schema';
 import { MongooseModule } from '@nestjs/mongoose';
 import { CaslModule } from 'src/core/abilities/casl.module';
-import { VnpayModule } from '../vnpay';
-import { BookingsService } from '../booking/bookings.service';
 import { BookingsModule } from '../booking/bookings.module';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Payment.name, schema: PaymentSchema }]),
+    MongooseModule.forFeature([
+      { name: Payment.name, schema: PaymentSchema },
+    ]),
     CaslModule,
     BookingsModule,
   ],
