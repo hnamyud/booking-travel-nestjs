@@ -369,7 +369,7 @@ POST   /api/upload/images      - Upload ảnh lên Cloudinary
                                  Field name: images[]
 ```
 
-**Swagger Documentation**: Truy cập `http://localhost:3000/api` để xem chi tiết tất cả endpoints, request/response schemas, và test trực tiếp.
+**Swagger Documentation**: Truy cập `http://localhost:3000/docs` để xem chi tiết tất cả endpoints, request/response schemas, và test trực tiếp.
 
 ## 🔒 Bảo mật
 
