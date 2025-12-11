@@ -19,6 +19,9 @@ export class Tour {
     @Prop()
     duration: string;
 
+    @Prop({ required: true })
+    durationDays: number;
+
     @Prop()
     price: number;
 
@@ -47,6 +50,12 @@ export class Tour {
         }] 
     })
     destinations: Destination[];
+
+    @Prop()
+    ratingAverage: number;
+
+    @Prop()
+    ratingQuantity: number;
 
     @Prop()
     createdAt: Date;

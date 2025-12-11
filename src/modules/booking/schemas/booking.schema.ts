@@ -8,7 +8,7 @@ export type BookingDocument = HydratedDocument<Booking>;
 export class Booking {
     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Tour', required: true })
     tour_id: mongoose.Schema.Types.ObjectId;
-    
+
     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
     user_id: mongoose.Schema.Types.ObjectId;
 
@@ -33,9 +33,15 @@ export class Booking {
         phone: string;
         email: string;
     };
-    
+
     @Prop()
     note?: string;
+
+    @Prop({ required: true })
+    startDate: Date; // Ngày  đi
+
+    @Prop({ required: true, index: true }) // Index for Cronjob
+    endDate: Date; // Ngày  về
 
     @Prop()
     ticketCode?: string;
@@ -49,7 +55,7 @@ export class Booking {
     @Prop()
     confirmAt: Date;
 
-    @Prop({default: false})
+    @Prop({ default: false })
     isUsed: boolean;
 
     @Prop()

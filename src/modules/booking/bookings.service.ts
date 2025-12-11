@@ -31,7 +31,8 @@ export class BookingsService {
       tour_id,
       numberOfGuests,
       contactInfo,
-      note
+      note,
+      startDate
     } = createBookingDto;
 
     return this.lockService.withLock(`tour_booking_${tour_id}`, async () => {
@@ -49,10 +50,14 @@ export class BookingsService {
           throw new ConflictException('Tour is not available for booking');
         }
 
-        // ✅ FIX: Check availableSlots riêng
+        // Check availableSlots riêng
         if (tour.availableSlots < numberOfGuests) {
           throw new ConflictException('Not enough slots available');
         }
+
+        const timeStart = new Date(startDate);
+        const timeEnd = new Date(startDate);
+        timeEnd.setDate(timeStart.getDate() + tour.durationDays);
 
         const newBooking = await this.bookingModel.create([{
           tour_id,
@@ -62,7 +67,9 @@ export class BookingsService {
           status: StatusBooking.Pending,
           payment_status: StatusPayment.Pending,
           contactInfo,
-          note
+          note,
+          startDate: timeStart,
+          endDate: timeEnd
         }], { session });
 
         await this.tourModel.updateOne(

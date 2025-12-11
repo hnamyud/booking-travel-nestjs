@@ -30,12 +30,12 @@ export class BookingScheduler {
             status: StatusBooking.Pending, // Chỉ xử lý các booking ở trạng thái Pending
             createdAt: { $lt: threshold },
         }).limit(50); // Giới hạn số lượng để tránh quá tải
-        if(expiredBookings.length === 0) return;
+        if (expiredBookings.length === 0) return;
 
         this.logger.log(`Found ${expiredBookings.length} expired bookings.`);
 
         const result = await Promise.allSettled(
-            expiredBookings.map(async (booking) => { 
+            expiredBookings.map(async (booking) => {
                 const session = await this.connection.startSession();
                 session.startTransaction();
 
@@ -43,26 +43,26 @@ export class BookingScheduler {
                     // Cập nhật trạng thái booking thành Expired
                     const bookingToUpdate = await this.bookingModel.findOneAndUpdate(
                         {
-                            _id: booking._id, 
+                            _id: booking._id,
                             status: StatusBooking.Pending
                         },
-                        { 
-                            $set: { 
-                                status: StatusBooking.Expired, 
-                                updatedAt: new Date(), 
-                                payment_status: StatusPayment.Failed 
-                            } 
+                        {
+                            $set: {
+                                status: StatusBooking.Expired,
+                                updatedAt: new Date(),
+                                payment_status: StatusPayment.Failed
+                            }
                         },
-                        { 
-                            session, 
-                            new: true 
+                        {
+                            session,
+                            new: true
                         }
                     );
                     if (!bookingToUpdate) {
                         await session.abortTransaction();
                         return;
-                    }    
-                    
+                    }
+
                     // Tìm tất cả payment đang chờ của booking này và hủy hết
                     await this.paymentModel.updateMany(
                         {
@@ -75,22 +75,24 @@ export class BookingScheduler {
                                 updatedAt: new Date()
                             }
                         },
-                        { session }  
+                        { session }
                     );
 
                     // Logic: Cập nhật lại số lượng vé trong Tour
                     await this.tourModel.updateOne(
                         { _id: booking.tour_id },
-                        { $inc: { 
-                            availableSlots: booking.numberOfGuests,
-                            bookedParticipants: -booking.numberOfGuests
-                        } },
+                        {
+                            $inc: {
+                                availableSlots: booking.numberOfGuests,
+                                bookedParticipants: -booking.numberOfGuests
+                            }
+                        },
                         { session }
                     );
 
                     await session.commitTransaction();
                     this.logger.log(`Booking ${booking._id} marked as expired and tour slots updated.`);
-            
+
                 }
                 catch (error) {
                     await session.abortTransaction();
@@ -101,5 +103,29 @@ export class BookingScheduler {
                 }
             })
         );
+    }
+
+    @Cron(CronExpression.EVERY_HOUR)
+    async handleCompletedBookings() {
+        this.logger.log('Checking for completed bookings...');
+
+        const now = new Date();
+        // Tìm các đơn CONFIRMED mà endDate đã qua rồi (nhỏ hơn hiện tại)
+        const result = await this.bookingModel.updateMany(
+            {
+                status: StatusBooking.Confirmed, // Đã xác nhận đi
+                endDate: { $lt: now }           // Đã đi về
+            },
+            {
+                $set: {
+                    status: StatusBooking.Completed,
+                    updatedAt: new Date()
+                }
+            }
+        );
+
+        if (result.modifiedCount > 0) {
+            this.logger.log(`Auto completed ${result.modifiedCount} bookings.`);
+        }
     }
 }

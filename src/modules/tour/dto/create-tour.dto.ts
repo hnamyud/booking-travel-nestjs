@@ -19,6 +19,12 @@ export class CreateTourDto {
     duration: string;
 
     @ApiProperty()
+    @IsNotEmpty({ message: 'Số ngày không được bỏ trống' })
+    @IsNumber()
+    @Min(1, { message: 'Số ngày phải lớn hơn 0' })
+    durationDays: number;
+
+    @ApiProperty()
     @IsNotEmpty({ message: 'Giá không được bỏ trống' })
     @IsNumber()
     @Min(0, { message: 'Giá không được âm' })

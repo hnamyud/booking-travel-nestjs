@@ -12,6 +12,9 @@ export class Review {
     user_id: mongoose.Schema.Types.ObjectId;
 
     @Prop()
+    booking_id: mongoose.Schema.Types.ObjectId;
+
+    @Prop()
     provider: string;
 
     @Prop()
@@ -34,3 +37,4 @@ export class Review {
 }
 
 export const ReviewSchema = SchemaFactory.createForClass(Review);
+ReviewSchema.index({ booking_id: 1 }, { unique: true });

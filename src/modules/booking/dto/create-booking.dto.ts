@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { Type } from "class-transformer";
-import { IsMongoId, IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validator";
+import { IsDate, IsMongoId, IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validator";
 import { ApiProperty } from '@nestjs/swagger';
 
 class ContactInfoDto {
@@ -40,4 +40,9 @@ export class CreateBookingDto {
     @IsOptional()
     @IsString()
     note?: string;
+
+    @ApiProperty()
+    @IsNotEmpty({ message: 'Ngày bắt đầu không được bỏ trống' })
+    @IsDate()
+    startDate: Date;
 }
