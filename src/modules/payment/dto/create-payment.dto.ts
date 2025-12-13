@@ -38,11 +38,4 @@ export class CreatePaymentDto {
     @IsOptional()
     @IsString()
     currency?: string = 'VND'; // Set default value ngay tại DTO hoặc Service
-
-    @ApiPropertyOptional({
-        description: 'Thông tin thêm (Mã ngân hàng, ngôn ngữ, ghi chú...)',
-        example: { bankCode: 'NCB', language: 'vn' }
-    })
-    @IsOptional()
-    metadata?: Record<string, any>;
 }

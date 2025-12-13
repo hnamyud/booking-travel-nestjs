@@ -29,7 +29,6 @@ export class PaymentsService {
       provider,
       amount,
       currency,
-      metadata
     } = createPaymentDto;
     const uniqueCode = `PAY_${Date.now()}_${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
     if (!mongoose.Types.ObjectId.isValid(booking_id.toString())) {
@@ -42,8 +41,7 @@ export class PaymentsService {
       provider,
       amount,
       currency: currency || 'VND',
-      status: StatusPayment.Pending,
-      metadata
+      status: StatusPayment.Pending
     });
 
     let paymentUrl = '';
@@ -196,7 +194,6 @@ export class PaymentsService {
           $set: {
             status: newStatus,
             metadata: {
-              ...payment.metadata,
               vnp_TransactionNo,
               vnp_BankCode,
               vnp_PayDate,

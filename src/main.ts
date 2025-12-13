@@ -8,7 +8,6 @@ import { JwtAuthGuard } from './core/guards/jw-auth.guard';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { helmetConfig } from './config/helmet.config';
-import { ThrottlerGuard } from '@nestjs/throttler';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

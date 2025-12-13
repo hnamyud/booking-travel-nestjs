@@ -6,11 +6,13 @@ import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose from 'mongoose';
 import aqp from 'api-query-params';
+import { Destination, DestinationDocument } from '../destination/schema/destination.schema';
 
 @Injectable()
 export class TourService {
   constructor(
     @InjectModel(Tour.name) private tourModel: SoftDeleteModel<TourDocument>,
+    @InjectModel(Destination.name) private destinationModel: SoftDeleteModel<DestinationDocument>,
   ) { }
 
   // Tự động cập nhật isAvailable khi module được khởi tạo
@@ -37,10 +39,11 @@ export class TourService {
   }
 
   async findAll(currentPage: number, limit: number, qs: string) {
-    const { filter, sort } = aqp(qs);
+    const { filter, sort, population } = aqp(qs);
 
     delete filter.current;
     delete filter.pageSize;
+
     let offset = (+currentPage - 1) * (+limit);
     let defaultLimit = +limit ? +limit : 10;
 
@@ -48,81 +51,56 @@ export class TourService {
 
     // === CUSTOM PARSER: thay $ bằng ký tự khác ===
     // VD: price_min, price_max thay vì price[$gte], price[$lte]
-    const customFilter: any = {};
-
-    // Parse price range: price_min=1000000&price_max=5000000
-    if (filter.price_min || filter.price_max) {
-      customFilter.price = {};
-      if (filter.price_min) customFilter.price.$gte = +filter.price_min;
-      if (filter.price_max) customFilter.price.$lte = +filter.price_max;
-      delete filter.price_min;
-      delete filter.price_max;
+    if (filter.price_min) {
+        filter.price = { ...filter.price, $gte: +filter.price_min };
+        delete filter.price_min;
+    }
+    if (filter.price_max) {
+        filter.price = { ...filter.price, $lte: +filter.price_max };
+        delete filter.price_max;
     }
 
     // Parse time range: timeStart_from=2025-09-01&timeEnd_to=2025-12-31
     if (filter.timeStart_from) {
-      customFilter.timeStart = { $gte: new Date(filter.timeStart_from) };
+      filter.timeStart = { ...filter.timeStart, $gte: new Date(filter.timeStart_from) };
       delete filter.timeStart_from;
     }
     if (filter.timeEnd_to) {
-      customFilter.timeEnd = { $lte: new Date(filter.timeEnd_to) };
+      filter.timeEnd = { ...filter.timeEnd, $lte: new Date(filter.timeEnd_to) };
       delete filter.timeEnd_to;
     }
 
     // Parse destination name: destinationName=Paris
     if (filter.destinationName) {
-      pipeline.push(
-        {
-          $lookup: {
-            from: 'destinations',
-            localField: 'destinations',
-            foreignField: '_id',
-            as: 'destinationDetails'
-          }
-        },
-        {
-          $match: {
-            'destinationDetails.name': new RegExp(filter.destinationName, 'i')
-          }
-        }
-      );
-      delete filter.destinationName;
+        // Tìm tất cả destination có tên chứa từ khóa
+        const destinations = await this.destinationModel.find({ 
+            name: new RegExp(filter.destinationName, 'i') 
+        }).select('_id'); // Chỉ lấy _id cho nhẹ
+
+        const destinationIds = destinations.map(d => d._id);
+
+        // Thêm điều kiện: Tour phải chứa 1 trong các ID này
+        // destinations trong Tour là mảng ID -> dùng $in
+        filter.destinations = { $in: destinationIds };
+        
+        delete filter.destinationName;
     }
 
-    // Merge với filter gốc
-    const matchStage = { 
-      ...filter, 
-      ...customFilter,
-      isDeleted: { $ne: true }
-     };
+    // Đảm bảo không lấy bản ghi đã xóa
+    filter.isDeleted = { $ne: true };
 
-    if (Object.keys(matchStage).length > 0) {
-      pipeline.push({ $match: matchStage });
-    }
-
-    // 3. Count total
-    const countPipeline = [...pipeline, { $count: 'total' }];
-    const countResult = await this.tourModel.aggregate(countPipeline);
-    const totalItems = countResult[0]?.total || 0;
+    const totalItems = await this.tourModel.countDocuments(filter);
     const totalPages = Math.ceil(totalItems / defaultLimit);
 
-    // 4. Sort, skip, limit
-    if (sort) {
-      pipeline.push({ $sort: sort });
-    }
-    pipeline.push({ $skip: offset }, { $limit: defaultLimit });
-
-    // 5. Populate destinations
-    pipeline.push({
-      $lookup: {
-        from: 'destinations',
-        localField: 'destinations',
-        foreignField: '_id',
-        as: 'destinations'
-      }
-    });
-
-    const result = await this.tourModel.aggregate(pipeline);
+    // Query dữ liệu
+    // sort từ aqp trả về dạng { price: 1 } hoặc { price: -1 } -> Mongoose hiểu luôn
+    const result = await this.tourModel.find(filter)
+        .select('-__v -isDeleted') // Bỏ bớt rác
+        .sort(sort as any) 
+        .skip(offset)
+        .limit(defaultLimit)
+        .populate('destinations') // Populate bình thường, hiệu năng tốt hơn tự lookup
+        .exec();
 
     return {
       meta: {

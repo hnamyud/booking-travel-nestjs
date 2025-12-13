@@ -41,8 +41,9 @@ export class CreateBookingDto {
     @IsString()
     note?: string;
 
-    @ApiProperty()
+    @ApiProperty({ example: '2025-12-25' })
     @IsNotEmpty({ message: 'Ngày bắt đầu không được bỏ trống' })
-    @IsDate()
+    @Type(() => Date)
+    @IsDate({ message: 'Ngày bắt đầu không hợp lệ' })
     startDate: Date;
 }
