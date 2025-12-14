@@ -31,6 +31,9 @@ export class Payment {
     @Prop({ type: String, enum: StatusPayment, default: StatusPayment.Pending })
     status: StatusPayment;
 
+    @Prop({ type: mongoose.Schema.Types.Mixed })
+    metadata?: any;
+
     @Prop()
     transactionDate: Date;
 

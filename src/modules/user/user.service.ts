@@ -6,15 +6,20 @@ import { InjectModel } from '@nestjs/mongoose';
 import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import { User, UserDocument } from './schema/user.schema';
 import { compare, compareSync, genSaltSync, hashSync } from 'bcryptjs';
-
 import mongoose from 'mongoose';
 import aqp from 'api-query-params';
 import { UserRole } from 'src/common/enum/role.enum';
 import { IUser } from 'src/common/interfaces/user.interface';
+import { Payment, PaymentDocument } from '../payment/schemas/payment.schema';
+import { Booking, BookingDocument } from '../booking/schemas/booking.schema';
 
 @Injectable()
 export class UserService {
-  constructor(@InjectModel(User.name) private userModel: SoftDeleteModel<UserDocument>) { }
+  constructor(
+    @InjectModel(User.name) private userModel: SoftDeleteModel<UserDocument>,
+    @InjectModel(Payment.name) private paymentModel: SoftDeleteModel<PaymentDocument>,
+    @InjectModel(Booking.name) private bookingModel: SoftDeleteModel<BookingDocument>,
+  ) { }
 
   getHashPassword = (password: string) => {
     const salt = genSaltSync(10);
@@ -289,5 +294,65 @@ export class UserService {
         password: password
       }
     );
+  }
+
+  fetchAllPaymentsByUser = async (user: IUser, currentPage: number, limit: number, qs: string) => {
+    const { filter, sort, population } = aqp(qs);
+    delete filter.current;
+    delete filter.pageSize;
+    filter.user_id = user._id; // Chỉ lấy payment của chính user đó
+    let offset = (+currentPage - 1) * (+limit);
+    let defaultLimit = +limit ? +limit : 10;
+
+    const totalItems = (await this.paymentModel.find(filter)).length;
+    const totalPages = Math.ceil(totalItems / defaultLimit);
+
+    const result = await this.paymentModel.find(filter)
+      .skip(offset)
+      .limit(defaultLimit)
+      .select('-__v -metadata -isDeleted -deletedAt') // Loại trừ thông tin không cần thiết
+      // @ts-ignore: Unreachable code error
+      .sort(sort)
+      .populate(population)
+      .exec();
+    return {
+      meta: {
+        current: currentPage, //trang hiện tại
+        pageSize: limit, //số lượng bản ghi đã lấy
+        pages: totalPages,  //tổng số trang với điều kiện query
+        total: totalItems // tổng số phần tử (số bản ghi)
+      },
+      result //kết quả query
+    }
+  }
+
+  fetchAllBookingByUser = async (user: IUser, currentPage: number, limit: number, qs: string) => {
+    const { filter, sort, population } = aqp(qs);
+    delete filter.current;
+    delete filter.pageSize;
+    filter.user_id = user._id; // Chỉ lấy booking của chính user đó
+    let offset = (+currentPage - 1) * (+limit);
+    let defaultLimit = +limit ? +limit : 10;
+
+    const totalItems = (await this.bookingModel.find(filter)).length;
+    const totalPages = Math.ceil(totalItems / defaultLimit);
+
+    const result = await this.bookingModel.find(filter)
+      .skip(offset)
+      .limit(defaultLimit)
+      .select('-__v -isDeleted -deletedAt') // Loại trừ thông tin không cần thiết
+      // @ts-ignore: Unreachable code error
+      .sort(sort)
+      .populate(population)
+      .exec();
+    return {
+      meta: {
+        current: currentPage, //trang hiện tại
+        pageSize: limit, //số lượng bản ghi đã lấy
+        pages: totalPages,  //tổng số trang với điều kiện query
+        total: totalItems // tổng số phần tử (số bản ghi)
+      },
+      result //kết quả query
+    }
   }
 }

@@ -11,6 +11,8 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { ApiBearerAuth, ApiBody, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { UpdateRoleDto } from './dto/update-user-role.dto';
 import { IUser } from 'src/common/interfaces/user.interface';
+import { Payment } from '../payment/schemas/payment.schema';
+import { Booking } from '../booking/schemas/booking.schema';
 
 @ApiTags('User')
 @Controller('user')
@@ -37,6 +39,38 @@ export class UserController {
     };
   }
 
+  @Get('payments')
+  @CheckPolicies({
+    handle: (ability) => ability.can(Action.Read, Payment),
+    message: 'Bạn không có quyền xem danh sách Payment'
+  }) 
+  @ApiBearerAuth('access-token')
+  @ResponseMessage("Fetch user payments with paginate")
+  getUserPayments(
+    @Query('current') currentPage: string, 
+    @Query('pageSize') limit: string, 
+    @Query() qs: string,
+    @GetUser() user: IUser
+  ) {
+    return this.userService.fetchAllPaymentsByUser(user, +currentPage, +limit, qs);
+  }
+
+  @Get('bookings')
+  @CheckPolicies({
+    handle: (ability) => ability.can(Action.Read, Booking),
+    message: 'Bạn không có quyền xem danh sách Booking'
+  }) 
+  @ApiBearerAuth('access-token')
+  @ResponseMessage("Fetch user bookings with paginate")
+  getUserBookings(
+    @Query('current') currentPage: string, 
+    @Query('pageSize') limit: string, 
+    @Query() qs: string,
+    @GetUser() user: IUser
+  ) {
+    return this.userService.fetchAllBookingByUser(user, +currentPage, +limit, qs);
+  }
+  
   @Get()
   @CheckPolicies({
     handle: (ability) => ability.can(Action.Read_All, User),
