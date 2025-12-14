@@ -11,6 +11,7 @@ import { Model } from 'mongoose';
 import { UserService } from '../user/user.service';
 import { User, UserDocument } from '../user/schema/user.schema';
 import { RegisterUserDto } from '../user/dto/create-user.dto';
+import { UserRole } from 'src/common/enum/role.enum';
 
 
 @Injectable()
@@ -175,7 +176,7 @@ export class AuthService {
 
   // Verify quyền ADMIN cho các route cần thiết
   verifyAdminAccess = async (iuser: IUser) => {
-    if (iuser.role !== 'ADMIN') {
+    if (iuser.role !== UserRole.Admin) {
       throw new ForbiddenException('Bạn không có quyền truy cập trang quản trị');
     }
 
@@ -194,6 +195,25 @@ export class AuthService {
     };
   }
 
+  verifyModeratorAccess = async (iuser: IUser) => {
+    if (iuser.role !== UserRole.Moderator && iuser.role !== UserRole.Admin) {
+      throw new ForbiddenException('Bạn không có quyền truy cập trang cho modder');
+    }
+    const moderatorPermissions = this.getPermissionsByRole(iuser.role);
+
+    return {
+      verified: true,
+      admin: {
+        _id: iuser._id,
+        name: iuser.name,
+        email: iuser.email,
+        role: iuser.role,
+      },
+      permissions: moderatorPermissions,
+      timestamp: new Date(),
+    };
+  }
+
   // Helper lấy permissions theo role
   private getPermissionsByRole(role: string): string[] {
     const rolePermissions = {
@@ -207,6 +227,11 @@ export class AuthService {
         'system:settings',
       ],
       USER: ['booking:own', 'profile:edit'],
+      MODERATOR: [
+        'booking:manage_own',
+        'payment:update_status',
+        'review:delete',
+      ],
     };
     return rolePermissions[role] || [];
   }

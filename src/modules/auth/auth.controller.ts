@@ -86,6 +86,13 @@ export class AuthController {
     return this.authService.verifyAdminAccess(user);
   }
 
+  @Post('/verify-moderator')
+  @ApiBearerAuth('access-token')
+  @ResponseMessage('Verify moderator access')
+  async verifyModerator(@GetUser() user: IUser) {
+    return this.authService.verifyModeratorAccess(user);
+  }
+
   @Post('/verify-otp')
   @Public()
   @ResponseMessage("Verify OTP")

@@ -54,21 +54,17 @@ export class CaslAbilityFactory {
       // * CASE 2: MODERATOR *
       // *********************
       case UserRole.Moderator:
-        can(
-          [
-            Action.Read,
-            Action.Update,
-          ],
-          [
-            Booking,
-            Payment
-          ]
-        );
-        can(Action.Update, Booking, { status: StatusBooking.Pending });
+        can(Action.Read_All, [User, Tour, Booking, Payment]);
+        can(Action.Create, Booking);
+        can(Action.Update, Booking, ['status', 'payment_status', 'note', 'contactInfo']);
         can(Action.CheckIn, Booking, { status: StatusBooking.Confirmed });
-        can([Action.Read, Action.Read_All], Tour);
-        can([Action.Read, Action.Read_All, Action.Delete], Review);
-        can([Action.Read], User);
+        can(Action.Update, Payment, ['status']);
+        can(Action.Delete, Review);
+        cannot(Action.Update, Review);
+
+        cannot(Action.Create, Tour);
+        cannot(Action.Update, Tour);
+        cannot(Action.Delete, Tour);
         break;
       // ****************
       // * CASE 3: USER *
