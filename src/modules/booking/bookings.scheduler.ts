@@ -105,7 +105,7 @@ export class BookingScheduler {
         );
     }
 
-    @Cron(CronExpression.EVERY_HOUR)
+    @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
     async handleCompletedBookings() {
         this.logger.log('Checking for completed bookings...');
 

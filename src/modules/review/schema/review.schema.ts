@@ -24,12 +24,6 @@ export class Review {
     comment: string;
 
     @Prop()
-    upvotes: number;
-
-    @Prop()
-    downvotes: number;
-
-    @Prop()
     createdAt: Date;
 
     @Prop()

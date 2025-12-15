@@ -53,7 +53,7 @@ export class ReviewController {
     return this.reviewService.findOne(id);
   }
 
-  @Patch()
+  @Patch(':id')
   @CheckPolicies({
     handle: (ability) => ability.can(Action.Update, Review),
     message: 'Bạn không có quyền cập nhật Review'
@@ -61,8 +61,8 @@ export class ReviewController {
   @ApiBearerAuth('access-token')
   @ApiBody({ type: UpdateReviewDto })
   @ResponseMessage("Update a Review")
-  update( @Body() updateReviewDto: UpdateReviewDto) {
-    return this.reviewService.update(updateReviewDto);
+  update(@Param('id') id: string, @Body() updateReviewDto: UpdateReviewDto) {
+    return this.reviewService.update(id, updateReviewDto);
   }
 
   @Delete(':id')

@@ -6,15 +6,17 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Review, ReviewDocument } from './schema/review.schema';
 import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import aqp from 'api-query-params';
-import mongoose from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 import { Booking, BookingDocument } from '../booking/schemas/booking.schema';
 import { StatusBooking } from 'src/common/enum/status-booking.enum';
+import { Tour, TourDocument } from '../tour/schema/tour.schema';
 
 @Injectable()
 export class ReviewService {
   constructor(
     @InjectModel(Review.name) private reviewModel: SoftDeleteModel<ReviewDocument>,
-    @InjectModel(Booking.name) private bookingModel: SoftDeleteModel<BookingDocument>,
+    @InjectModel(Booking.name) private bookingModel: Model<BookingDocument>,
+    @InjectModel(Tour.name) private tourModel: Model<TourDocument>, // TourDocument not imported to avoid circular dependency
   ) { }
   async create(createReviewDto: CreateReviewDto, user: IUser) {
     const { tour_id, rating, comment } = createReviewDto;
@@ -52,6 +54,7 @@ export class ReviewService {
     });
 
     // TODO: Tính toán lại Rating trung bình cho Tour (Side effect)
+    await this.updateAverageRating(String(tour_id));
 
     return newReview;
   }
@@ -93,16 +96,16 @@ export class ReviewService {
     });
   }
 
-  async update(updateReviewDto: UpdateReviewDto) {
-    const { _id, ...updateData } = updateReviewDto;
+  async update(id: string, updateReviewDto: UpdateReviewDto) {
+    const {...updateData } = updateReviewDto;
 
     // Validate ObjectId
-    if (!mongoose.Types.ObjectId.isValid(_id)) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       throw new BadRequestException('ID không hợp lệ');
+    
     }
-
     const result = await this.reviewModel.updateOne(
-      { _id: _id },
+      { _id: id },
       { $set: updateData } // Sử dụng $set operator
     );
     return result;
@@ -115,5 +118,42 @@ export class ReviewService {
     return this.reviewModel.softDelete({
       _id: id
     });
+  }
+
+  // Helpers
+  updateAverageRating = async (tour_id: string) => {
+    const reviews = await this.reviewModel.aggregate([
+      {
+        $match: { tour_id: new mongoose.Types.ObjectId(tour_id) }
+      },
+      {
+        $group: {
+          _id: '$tour_id',
+          nRating: { $sum: 1 },
+          rating: { $avg: '$rating' }
+        }
+      }
+    ])
+    if (reviews.length > 0) {
+      await this.tourModel.updateOne(
+        { _id: tour_id },
+        {
+          $set: {
+            ratingAverage: Math.round(reviews[0].rating * 10) / 10, 
+            ratingQuantity: reviews[0].nRating
+          }
+        }
+      );
+    } else {
+      await this.tourModel.updateOne(
+        { _id: tour_id },
+        {
+          $set: {
+            ratingAverage: 0,
+            ratingQuantity: 0
+          }
+        }
+      );
+    }
   }
 }

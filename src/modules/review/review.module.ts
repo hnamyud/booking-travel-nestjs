@@ -5,12 +5,14 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Review, ReviewSchema } from './schema/review.schema';
 import { CaslModule } from 'src/core/abilities/casl.module';
 import { Booking, BookingSchema } from '../booking/schemas/booking.schema';
+import { Tour, TourSchema } from '../tour/schema/tour.schema';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: Review.name, schema: ReviewSchema },
       { name: Booking.name, schema: BookingSchema },
+      { name: Tour.name, schema: TourSchema },
     ]),
     CaslModule
   ],
