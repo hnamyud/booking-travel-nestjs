@@ -23,6 +23,7 @@ import { VnpayModule } from './modules/vnpay';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CloudinaryModule } from './shared/upload/cloudinary.module';
 import { MailModule } from './shared/mailer/mail.module';
+import { SeedModule } from './seed/seed.module';
 
 
 @Module({
@@ -85,6 +86,7 @@ import { MailModule } from './shared/mailer/mail.module';
     CaslModule,
     MailModule,
     RedisModule,
+    SeedModule,
   ],
   controllers: [AppController],
   providers: [

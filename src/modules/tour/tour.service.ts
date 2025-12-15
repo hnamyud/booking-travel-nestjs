@@ -15,17 +15,6 @@ export class TourService {
     @InjectModel(Destination.name) private destinationModel: SoftDeleteModel<DestinationDocument>,
   ) { }
 
-  // Tự động cập nhật isAvailable khi module được khởi tạo
-  async onModuleInit() {
-    const now = new Date();
-    // Update tất cả tour đã hết hạn
-    await this.tourModel.updateMany(
-      { timeEnd: { $lt: now } },
-      { $set: { isAvailable: false } }
-    );
-    console.log('Auto update isAvailable for tours completed!');
-  }
-
   async create(createTourDto: CreateTourDto) {
 
     const newTour = await this.tourModel.create({

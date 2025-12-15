@@ -8,7 +8,7 @@ import { LockService } from 'src/common/services/lock.services';
 import { Tour, TourSchema } from '../tour/schema/tour.schema';
 import { RedisModule } from '../../shared/cache/redis.module';
 import { PaymentsModule } from '../payment/payments.module';
-import { BookingScheduler } from './booking.scheduler';
+import { BookingScheduler } from './bookings.scheduler';
 import { Payment, PaymentSchema } from '../payment/schemas/payment.schema';
 import { MailModule } from 'src/shared/mailer/mail.module';
 
