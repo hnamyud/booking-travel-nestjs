@@ -5,6 +5,8 @@
 ## 📋 Mục lục
 
 - [Tính năng](#-tính-năng)
+- [Preview nhanh](#-preview-nhanh)
+- [Điểm có thể cải thiện hiện tại](#-điểm-có-thể-cải-thiện-hiện-tại)
 - [Công nghệ sử dụng](#-công-nghệ-sử-dụng)
 - [Cài đặt](#-cài-đặt)
 - [Cấu hình](#-cấu-hình)
@@ -35,6 +37,21 @@
 - **Request Logging**: Middleware ghi log mọi request với unique ID
 - **Email with QR Code**: Tự động gửi ticket với mã QR sau khi thanh toán thành công
 - **OTP Reset Password**: Hệ thống reset mật khẩu qua email với OTP (5 phút expire)
+
+## 👀 Preview nhanh
+
+- **Swagger UI**: `http://localhost:3000/docs` để thử nhanh tất cả endpoints (Auth, Tours, Booking, Payments, Upload, Review).
+- **Luồng chính đã sẵn sàng**:
+  - Đăng ký/đăng nhập → Tạo tour → Đặt tour (có Redis lock) → Thanh toán VNPay sandbox → Email xác nhận kèm QR.
+  - Đặt tour chưa thanh toán sẽ tự động **expire sau 15 phút** nhờ scheduler.
+- **Triển khai local**: `npm run start:dev` sau khi cấu hình `.env` sẽ có đủ middleware bảo mật (Helmet, Throttler) và logging chi tiết.
+
+## 🚧 Điểm có thể cải thiện hiện tại
+
+- Thêm file `.env.example` và/hoặc `docker-compose` cho MongoDB & Redis để onboarding nhanh hơn.
+- Bổ sung test unit/e2e cho các luồng quan trọng (booking với lock, VNPay IPN) để tránh regression.
+- Thiết lập CI (lint + test) và pre-commit hook để giữ chất lượng mã nguồn ổn định.
+- Bổ sung hướng dẫn seed dữ liệu mẫu (tour, user) giúp thử nghiệm API thuận tiện hơn.
 
 ## 🛠 Công nghệ sử dụng
 
