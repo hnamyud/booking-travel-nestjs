@@ -9,13 +9,17 @@ import { ApiBearerAuth, ApiBody, ApiProperty, ApiTags } from '@nestjs/swagger';
 import { LoginDto } from './dto/login.dto';
 import { UserService } from '../user/user.service';
 import { RegisterUserDto } from '../user/dto/create-user.dto';
+import { GoogleAuthGuard } from 'src/core/guards/google-auth.guard';
+import { resolve } from 'path';
+import { ConfigService } from '@nestjs/config';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(
     private authService: AuthService,
-    private userService: UserService
+    private userService: UserService,
+    private configService: ConfigService
   ) { }
 
   @Post('/login')
@@ -49,6 +53,26 @@ export class AuthController {
   @ApiProperty({ type: RegisterUserDto })
   create(@Body() RegisterUserDto: RegisterUserDto) {
     return this.authService.register(RegisterUserDto);
+  }
+
+  @Get('/google/login')
+  @Public()
+  @UseGuards(GoogleAuthGuard)
+  @ResponseMessage("Google login")
+  handleGoogleLogin() {
+    // This route will redirect to Google for authentication
+  }
+
+  @Get('/google/callback')
+  @Public()
+  @UseGuards(GoogleAuthGuard)
+  @ResponseMessage("Google callback")
+  async handleGoogleCallback(
+    @Req() req: Request & { user: any },
+    @Res({ passthrough: true }) response: Response
+  ) {
+    const request = await this.authService.login(req.user, response);
+    response.redirect(this.configService.get('BROWSER_REDIRECT_URI') + request.access_token);
   }
 
   @Get('/account')

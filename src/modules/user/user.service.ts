@@ -71,7 +71,7 @@ export class UserService {
     return newUser;
   }
 
-  create = async (createUserDto: CreateUserDto, iuser: IUser) => {
+  create = async (createUserDto: CreateUserDto, iuser?: IUser) => {
     if (!iuser || !iuser._id) {
       throw new BadRequestException('Không có thông tin người tạo');
     }
@@ -113,6 +113,27 @@ export class UserService {
       createdAt: new Date()
     });
     return user;
+  }
+
+  createGoogleUser = async (googleUser: { email: string; name: string }) => {
+    const { name, email } = googleUser;
+    const isExisted = await this.userModel.findOne({ email });
+    if (isExisted) {
+      return isExisted;
+    }
+    
+    // Generate a random password for Google users
+    const randomPassword = Math.random().toString(36).slice(-8);
+    const hashPassword = await this.getHashPassword(randomPassword);
+
+    let newUser = await this.userModel.create({
+      name,
+      email,
+      password: hashPassword,
+      role: UserRole.User,
+      createdAt: new Date()
+    });
+    return newUser;
   }
 
   async findAll(currentPage: number, limit: number, qs: string) {

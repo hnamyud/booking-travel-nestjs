@@ -45,7 +45,7 @@ import { SeedModule } from './seed/seed.module';
         {
           name: 'short', // ✅ Thêm name
           ttl: 60000,    // 60 seconds = 1 minute
-          limit: 10,    // ✅ Tăng lên 100 requests/minute (reasonable cho app)
+          limit: 20,    // ✅ Tăng lên 100 requests/minute (reasonable cho app)
         },
         {
           name: 'medium', // ✅ Multiple throttlers

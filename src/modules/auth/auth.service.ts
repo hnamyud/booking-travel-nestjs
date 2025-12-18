@@ -10,7 +10,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { UserService } from '../user/user.service';
 import { User, UserDocument } from '../user/schema/user.schema';
-import { RegisterUserDto } from '../user/dto/create-user.dto';
+import { CreateUserDto, RegisterUserDto } from '../user/dto/create-user.dto';
 import { UserRole } from 'src/common/enum/role.enum';
 
 
@@ -283,5 +283,22 @@ export class AuthService {
     await this.userService.updateUserPassword(resetPasswordDto.email, hashPassword);
     // Xoá OTP sau khi đổi mật khẩu thành công
     await this.redisClient.del(redisKey);
+  }
+
+  // Google OAuth2
+  async validateGoogleUser(
+    googleUser: { 
+      email: string; 
+      name: string; 
+      password?: string 
+    }
+  ): Promise<any> {
+    const user = await this.userService.findOneByEmail(googleUser.email);
+    if(user) return user;
+    return await this.userService.createGoogleUser({
+      name: googleUser.name,
+      email: googleUser.email
+    });
+
   }
 }
