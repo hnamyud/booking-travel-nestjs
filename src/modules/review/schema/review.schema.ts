@@ -5,7 +5,7 @@ export type ReviewDocument = HydratedDocument<Review>;
 
 @Schema({ timestamps: true })
 export class Review {
-    @Prop()
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Tour' })
     tour_id: mongoose.Schema.Types.ObjectId;
 
     @Prop()

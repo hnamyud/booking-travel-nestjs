@@ -36,24 +36,51 @@ export class DestinationService {
     let offset = (+currentPage - 1) * (+limit);
     let defaultLimit = +limit ? +limit : 10;
 
-    const totalItems = (await this.destinationModel.find(filter)).length;
+    // Parse destination name: destinationName=keyword (tìm trong name hoặc country)
+    if (filter.destinationName) {
+        const keyword = filter.destinationName;
+        const regex = new RegExp(keyword, 'i'); // Regex không phân biệt hoa thường
+
+        // Dùng toán tử $or: Tìm trong 'name' HOẶC tìm trong 'country'
+        // Cú pháp của Mongoose cho phép merge object như này:
+        const searchCondition = {
+            $or: [
+                { name: regex },      // Khớp tên thành phố
+                { country: regex }    // Khớp tên quốc gia
+            ]
+        };
+
+        // Merge điều kiện tìm kiếm vào filter chính
+        Object.assign(filter, searchCondition);
+
+        // Xóa param gốc để tránh aqp tự query sai
+        delete filter.destinationName;
+    }
+
+    // Đảm bảo không lấy bản ghi đã xóa
+    filter.isDeleted = { $ne: true };
+
+    // --- QUERY ---
+    // (Phần còn lại giữ nguyên như code tối ưu trước đó)
+    const totalItems = await this.destinationModel.countDocuments(filter);
     const totalPages = Math.ceil(totalItems / defaultLimit);
 
     const result = await this.destinationModel.find(filter)
-      .skip(offset)
-      .limit(defaultLimit)
-      // @ts-ignore: Unreachable code error
-      .sort(sort)
-      .populate(population)
-      .exec();
+        .select('-__v -isDeleted') 
+        .sort(sort as any) 
+        .skip(offset)
+        .limit(defaultLimit)
+        .populate(population)
+        .exec();
+
     return {
       meta: {
-        current: currentPage, //trang hiện tại
-        pageSize: limit, //số lượng bản ghi đã lấy
-        pages: totalPages,  //tổng số trang với điều kiện query
-        total: totalItems // tổng số phần tử (số bản ghi)
+        current: currentPage,
+        pageSize: defaultLimit,
+        pages: totalPages,
+        total: totalItems
       },
-      result //kết quả query
+      result
     };
   }
 
@@ -92,35 +119,35 @@ export class DestinationService {
       throw new NotFoundException('Destination không tồn tại');
     }
     if (destination.images && destination.images.length > 0) {
-    try {
-      const deletePromises = destination.images.map(image => 
-        this.cloudinaryService.deleteImage(image.public_id)
-      );
-      
-      const results = await Promise.allSettled(deletePromises);
-      
-      // Log kết quả
-      const successCount = results.filter(r => r.status === 'fulfilled').length;
-      const failCount = results.filter(r => r.status === 'rejected').length;
-      
-      console.log(`✅ Đã xóa ${successCount}/${destination.images.length} ảnh`);
-      
-      if (failCount > 0) {
-        console.warn(`⚠️ Không xóa được ${failCount} ảnh`);
-      }
-    } catch (error) {
-      console.error('Lỗi khi xóa ảnh:', error);
-      // Có thể throw error hoặc tiếp tục xóa destination
-      // throw new BadRequestException('Không thể xóa ảnh');
-    }
-  }
+      try {
+        const deletePromises = destination.images.map(image =>
+          this.cloudinaryService.deleteImage(image.public_id)
+        );
 
-  // ✅ Bước 3: Soft delete destination
-  const result = await this.destinationModel.softDelete({ _id: id });
-  
-  return {
-    deleted: result.deleted,
-    message: 'Xóa destination và ảnh thành công'
-  };
+        const results = await Promise.allSettled(deletePromises);
+
+        // Log kết quả
+        const successCount = results.filter(r => r.status === 'fulfilled').length;
+        const failCount = results.filter(r => r.status === 'rejected').length;
+
+        console.log(`✅ Đã xóa ${successCount}/${destination.images.length} ảnh`);
+
+        if (failCount > 0) {
+          console.warn(`⚠️ Không xóa được ${failCount} ảnh`);
+        }
+      } catch (error) {
+        console.error('Lỗi khi xóa ảnh:', error);
+        // Có thể throw error hoặc tiếp tục xóa destination
+        // throw new BadRequestException('Không thể xóa ảnh');
+      }
+    }
+
+    // ✅ Bước 3: Soft delete destination
+    const result = await this.destinationModel.softDelete({ _id: id });
+
+    return {
+      deleted: result.deleted,
+      message: 'Xóa destination và ảnh thành công'
+    };
   }
 }

@@ -87,13 +87,40 @@ export class ReviewService {
     };
   }
 
-  async findOne(id: string) {
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new BadRequestException(`Not found review`);
+  async findReviewByUser(user: IUser, currentPage: number, limit: number, qs: string) {
+    const { filter, sort, population } = aqp(qs);
+    delete filter.current;
+    delete filter.pageSize;
+
+    filter.user_id = user._id;
+    filter.isDeleted = false;
+
+    let offset = (+currentPage - 1) * (+limit);
+    let defaultLimit = +limit ? +limit : 10;
+
+    const totalItems = (await this.reviewModel.find(filter)).length;
+    const totalPages = Math.ceil(totalItems / defaultLimit);
+
+    const result = await this.reviewModel.find(filter)
+      .skip(offset)
+      .limit(defaultLimit)
+      .select('-__v -isDeleted')
+      // @ts-ignore: Unreachable code error
+      .sort(sort)
+      .populate({ 
+          path: 'tour_id', 
+          select: '_id name image duration' // Chỉ lấy field cần thiết
+      })
+      .exec();
+    return {
+      meta: {
+        current: currentPage, //trang hiện tại
+        pageSize: limit, //số lượng bản ghi đã lấy
+        pages: totalPages,  //tổng số trang với điều kiện query
+        total: totalItems // tổng số phần tử (số bản ghi)
+      },
+      result //kết quả query
     };
-    return await this.reviewModel.findOne({
-      _id: id
-    });
   }
 
   async update(id: string, updateReviewDto: UpdateReviewDto) {

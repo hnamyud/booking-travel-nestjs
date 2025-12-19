@@ -8,7 +8,7 @@ import { PoliciesGuard } from 'src/core/guards/policy.guard';
 import { Action } from 'src/core/abilities/action.enum';
 import { Review } from './schema/review.schema';
 import { CheckPolicies } from 'src/core/decorator/policy.decorator';
-import { ApiBearerAuth, ApiBody, ApiSecurity, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Review')
 @Controller('review')
@@ -34,6 +34,21 @@ export class ReviewController {
       createdAt: newReview?.createdAt
     };
   }
+  @Get('user')
+  @CheckPolicies({
+    handle: (ability) => ability.can(Action.Read, Review),
+    message: 'Bạn không có quyền xem Review'
+  })
+  @ApiBearerAuth('access-token')
+  @ResponseMessage("Fetch a review by user_id")
+  findAllByUser(
+    @GetUser() user: IUser,
+    @Query('current') currentPage: string, 
+    @Query('pageSize') limit: string, 
+    @Query() qs: string
+  ) {
+    return this.reviewService.findReviewByUser(user, +currentPage, +limit, qs);
+  }
 
   @Get()
   @Public()
@@ -44,13 +59,6 @@ export class ReviewController {
     @Query() qs: string
   ) {
     return this.reviewService.findAll(+currentPage, +limit, qs);
-  }
-
-  @Get(':id')
-  @Public()
-  @ResponseMessage("Fetch a review by id")
-  findOne(@Param('id') id: string) {
-    return this.reviewService.findOne(id);
   }
 
   @Patch(':id')

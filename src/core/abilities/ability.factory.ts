@@ -31,7 +31,7 @@ export class CaslAbilityFactory {
 
     // Ai cũng có quyền này (kể cả User, Mod, Admin)
     can([Action.Read, Action.Read_All], Destination);
-    can([Action.Read, Action.Read_All], Review);
+    can([Action.Read_All], Review);
     can(Action.Update, User, { _id: user._id });
 
     switch (user.role) {
@@ -80,7 +80,7 @@ export class CaslAbilityFactory {
           Booking,
         ], { user_id: user._id });
 
-        can([Action.Create, Action.Update, Action.Delete], Review, { user_id: user._id });
+        can([Action.Create, Action.Update, Action.Read, Action.Delete], Review, { user_id: user._id });
 
         can([Action.Read, Action.Create], Payment, { user_id: user._id });
         // User chỉ có thể xem thông tin của chính họ
