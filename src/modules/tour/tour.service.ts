@@ -1,10 +1,10 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTourDto } from './dto/create-tour.dto';
 import { UpdateTourDto } from './dto/update-tour.dto';
 import { Tour, TourDocument } from './schema/tour.schema';
 import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import { InjectModel } from '@nestjs/mongoose';
-import mongoose from 'mongoose';
+import mongoose, { model } from 'mongoose';
 import aqp from 'api-query-params';
 import { Destination, DestinationDocument } from '../destination/schema/destination.schema';
 
@@ -40,39 +40,82 @@ export class TourService {
 
     // === CUSTOM PARSER: thay $ bằng ký tự khác ===
     // VD: price_min, price_max thay vì price[$gte], price[$lte]
-    if (filter.price_min) {
-        filter.price = { ...filter.price, $gte: +filter.price_min };
-        delete filter.price_min;
+    if (filter.priceMin) {
+      filter.price = { ...filter.price, $gte: +filter.priceMin };
+      delete filter.priceMin;
     }
-    if (filter.price_max) {
-        filter.price = { ...filter.price, $lte: +filter.price_max };
-        delete filter.price_max;
+    if (filter.priceMax) {
+      filter.price = { ...filter.price, $lte: +filter.priceMax };
+      delete filter.priceMax;
     }
 
     // Parse time range: timeStart_from=2025-09-01&timeEnd_to=2025-12-31
-    if (filter.timeStart_from) {
-      filter.timeStart = { ...filter.timeStart, $gte: new Date(filter.timeStart_from) };
+    if (filter.timeStart_from && filter.timeEnd_to) {
+      const userStart = new Date(filter.timeStart_from);
+      const userEnd = new Date(filter.timeEnd_to);
+
+      // Validation cơ bản
+      if (userStart > userEnd) throw new BadRequestException('Ngày đi phải nhỏ hơn ngày về');
+
+      const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+      const userWindowMs = userEnd.getTime() - userStart.getTime();
+
+      // Sử dụng $expr để so sánh các field nội tại của Document
+      // *** $expr không tận dụng index tốt bằng find thường, nhưng bắt buộc phải dùng ở đây
+      filter.$expr = {
+        $and: [
+          // 1. Check độ dài: Tour phải ngắn hơn thời gian rảnh của khách
+          // duration_days (đổi ra ms) <= userWindowMs
+          {
+            $lte: [
+              { $multiply: ["$durationDays", ONE_DAY_MS] },
+              userWindowMs
+            ]
+          },
+
+          // 2. Logic Giao nhau (Overlap Logic)
+          // Khoảng Tour: [timeStart, timeEnd]
+          // Khoảng Khách (có thể khởi hành): [userStart, userEnd - duration]
+
+          // Điều kiện 1: Tour.End >= User.Start
+          // (Nếu Tour kết thúc bán trước khi khách rảnh -> Loại)
+          { $gte: ["$timeEnd", userStart] },
+
+          // Điều kiện 2: Tour.Start <= User.End - Duration
+          // (Nếu Tour mở bán quá muộn, khách đi không kịp về -> Loại)
+          {
+            $lte: [
+              "$timeStart",
+              {
+                $subtract: [
+                  userEnd,
+                  { $multiply: ["$durationDays", ONE_DAY_MS] } // Trừ đi thời gian đi tour
+                ]
+              }
+            ]
+          }
+        ]
+      };
+
+      // Xóa params ảo để không bị query nhầm
       delete filter.timeStart_from;
-    }
-    if (filter.timeEnd_to) {
-      filter.timeEnd = { ...filter.timeEnd, $lte: new Date(filter.timeEnd_to) };
       delete filter.timeEnd_to;
     }
 
     // Parse destination name: destinationName=Paris
     if (filter.destinationName) {
-        // Tìm tất cả destination có tên chứa từ khóa
-        const destinations = await this.destinationModel.find({ 
-            name: new RegExp(filter.destinationName, 'i') 
-        }).select('_id'); // Chỉ lấy _id cho nhẹ
+      // Tìm tất cả destination có tên chứa từ khóa
+      const destinations = await this.destinationModel.find({
+        name: new RegExp(filter.destinationName, 'i')
+      }).select('_id'); // Chỉ lấy _id cho nhẹ
 
-        const destinationIds = destinations.map(d => d._id);
+      const destinationIds = destinations.map(d => d._id);
 
-        // Thêm điều kiện: Tour phải chứa 1 trong các ID này
-        // destinations trong Tour là mảng ID -> dùng $in
-        filter.destinations = { $in: destinationIds };
-        
-        delete filter.destinationName;
+      // Thêm điều kiện: Tour phải chứa 1 trong các ID này
+      // destinations trong Tour là mảng ID -> dùng $in
+      filter.destinations = { $in: destinationIds };
+
+      delete filter.destinationName;
     }
 
     // Đảm bảo không lấy bản ghi đã xóa
@@ -84,12 +127,12 @@ export class TourService {
     // Query dữ liệu
     // sort từ aqp trả về dạng { price: 1 } hoặc { price: -1 } -> Mongoose hiểu luôn
     const result = await this.tourModel.find(filter)
-        .select('-__v -isDeleted') // Bỏ bớt rác
-        .sort(sort as any) 
-        .skip(offset)
-        .limit(defaultLimit)
-        .populate('destinations') // Populate bình thường, hiệu năng tốt hơn tự lookup
-        .exec();
+      .select('-__v -isDeleted') // Bỏ bớt rác
+      .sort(sort as any)
+      .skip(offset)
+      .limit(defaultLimit)
+      .populate('destinations') // Populate bình thường, hiệu năng tốt hơn tự lookup
+      .exec();
 
     return {
       meta: {
@@ -104,15 +147,32 @@ export class TourService {
 
   async findOne(id: string) {
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new BadRequestException(`Not found destination`);
-    };
-    const tour = await this.tourModel.findOne({
-      _id: id
-    });
-    return tour.populate({
-      path: 'destinations', select:
-        { name: 1, country: 1, description: 1, images: 1 }
-    });
+      throw new BadRequestException('Invalid Tour ID');
+    }
+
+    const tour = await this.tourModel.findById(id)
+      .populate('destinations') // Populate địa điểm (như cũ)
+
+      // Dùng cái virtual vừa định nghĩa
+      .populate({
+        path: 'reviews',
+        options: {
+          sort: { rating: -1 },
+          limit: 5
+        },
+        select: 'rating comment user_id createdAt', // Chỉ lấy những thông tin này
+        populate: {
+          path: 'user_id',
+          model: 'User',
+          select: 'name email'
+        }
+      })
+      .exec();
+    if (!tour) {
+      throw new NotFoundException('Tour not found');
+    }
+
+    return tour;
   }
 
   async update(id: string, updateTourDto: UpdateTourDto) {

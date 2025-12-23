@@ -7,7 +7,11 @@ export interface CloudinaryImage {
   url: string;
   public_id: string;
 }
-@Schema({ timestamps: true })
+@Schema({ 
+  timestamps: true,
+  toJSON: { virtuals: true }, // Virtual field
+  toObject: { virtuals: true }
+})
 export class Destination {
     @Prop()
     name: string;
@@ -33,3 +37,15 @@ export class Destination {
 }
 
 export const DestinationSchema = SchemaFactory.createForClass(Destination);
+DestinationSchema.virtual('topTours', {
+  ref: 'Tour',
+  localField: '_id',
+  foreignField: 'destinations',
+  justOne: false,
+  options: { 
+    sort: { 
+      ratingAverage: -1 
+    }, 
+    limit: 5 
+  }
+})

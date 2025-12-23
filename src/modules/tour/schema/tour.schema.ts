@@ -4,7 +4,7 @@ import { Destination } from "src/modules/destination/schema/destination.schema";
 
 export type TourDocument = HydratedDocument<Tour>;
 
-@Schema({ 
+@Schema({
     timestamps: true,
     toJSON: { virtuals: true }, // Virtual field
     toObject: { virtuals: true }
@@ -43,11 +43,11 @@ export class Tour {
     @Prop({ default: true, index: true })
     isAvailable: boolean;
 
-    @Prop({ 
-        type: [{ 
-            type: mongoose.Schema.Types.ObjectId, 
-            ref: 'Destination' 
-        }] 
+    @Prop({
+        type: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Destination'
+        }]
     })
     destinations: Destination[];
 
@@ -70,7 +70,9 @@ const TourSchema = SchemaFactory.createForClass(Tour);
 TourSchema.virtual('reviews', {
     ref: 'Review',          // Tên model Review
     localField: '_id',      // Khớp _id của Tour
-    foreignField: 'tour_id' // với trường tour_id bên Review
+    foreignField: 'tour_id', // với trường tour_id bên Review
+    justOne: false,          // Lấy danh sách (mảng) chứ không phải 1 cái
+    options: { sort: { rating: -1 } } // (Tùy chọn) Lấy review điểm cao lên trước
 });
 
 // Middleware: Tự động tính availableSlots khi tạo (Optional)

@@ -88,9 +88,14 @@ export class DestinationService {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return `Not found destination`;
     };
-    return await this.destinationModel.findOne({
-      _id: id
+    const destination = await this.destinationModel.findById(id)
+    .populate({ 
+      path: 'topTours',
+      select: 'name duration price availableSlots ratingAverage',
     });
+    if (!destination) throw new NotFoundException('Destination not found');
+
+    return destination;
   }
 
   async update(id: string, updateDestinationDto: UpdateDestinationDto) {
