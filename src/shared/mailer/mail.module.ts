@@ -9,6 +9,8 @@ import { join } from 'path';
 import { RedisModule } from 'src/shared/cache/redis.module';
 import { UserModule } from 'src/modules/user/user.module';
 import { QRCodeModule } from '../qrcode/qrcode.module';
+import { BullModule } from '@nestjs/bull';
+import { MailProcessor } from './mail.processor';
 
 @Module({
   imports: [
@@ -16,6 +18,9 @@ import { QRCodeModule } from '../qrcode/qrcode.module';
     RedisModule, 
     UserModule,
     QRCodeModule,
+    BullModule.registerQueue({
+      name: 'mail-queue',
+    }),
     MailerModule.forRootAsync({
       useFactory: async (config: ConfigService) => ({
         transport: {
@@ -40,7 +45,7 @@ import { QRCodeModule } from '../qrcode/qrcode.module';
     }),
   ],
   controllers: [MailController],
-  providers: [MailService],
+  providers: [MailService, MailProcessor],
   exports: [MailService]
 })
 export class MailModule { }

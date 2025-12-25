@@ -245,7 +245,7 @@ export class BookingsService {
       booking.contactInfo.fullName,
       ticketCode,
       tourData.name,
-      new Date(tourData.timeStart),
+      new Date(booking.startDate),
       booking.numberOfGuests,
       payment.provider,
       booking.totalPrice

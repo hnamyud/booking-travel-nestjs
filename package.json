@@ -23,6 +23,7 @@
   "dependencies": {
     "@casl/ability": "^6.7.3",
     "@nestjs-modules/mailer": "1.8.1",
+    "@nestjs/bull": "^11.0.4",
     "@nestjs/config": "2.3.1",
     "@nestjs/core": "9.4.0",
     "@nestjs/jwt": "10.0.3",
@@ -38,6 +39,7 @@
     "axios": "^1.12.2",
     "bcryptjs": "2.4.3",
     "buffer-to-stream": "^1.0.0",
+    "bull": "^4.16.5",
     "cache-manager-ioredis": "^2.1.0",
     "class-transformer": "0.5.1",
     "class-validator": "0.14.0",

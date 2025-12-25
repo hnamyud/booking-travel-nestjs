@@ -6,17 +6,17 @@ import { randomInt } from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { SendResetPasswordDto } from 'src/modules/auth/dto/reset-password.dto';
 import { UserService } from 'src/modules/user/user.service';
-import { IUser } from 'src/common/interfaces/user.interface';
 import { QRCodeService } from '../qrcode/qrcode.service';
+import { Queue } from 'bull';
+import { InjectQueue } from '@nestjs/bull';
 
 @Injectable()
 export class MailService {
     constructor(
-        private readonly mailerService: MailerService,
         private readonly userService: UserService,
         @Inject('REDIS_CLIENT') private redisClient: Redis,
         private configService: ConfigService,
-        private qrService: QRCodeService,
+        @InjectQueue('mail-queue') private mailQueue: Queue,
     ) { }
 
     // Generate random OTP
@@ -26,7 +26,7 @@ export class MailService {
 
     async sendResetPasswordEmail(sendResetPasswordDto: SendResetPasswordDto) {
         // Kiểm tra rate limit
-        const rateLimitKey = `reset_rate_limit:${sendResetPasswordDto.email}`; 0
+        const rateLimitKey = `reset_rate_limit:${sendResetPasswordDto.email}`;
         const attempts = await this.redisClient.get(rateLimitKey);
         if (attempts && parseInt(attempts) >= 5) {
             throw new Error('Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau.');
@@ -41,25 +41,22 @@ export class MailService {
         await this.redisClient.set(`reset_otp:${sendResetPasswordDto.email}`, otp, 'EX', 300);
 
         // Tăng counter rate limit (15 phút)
-        await this.redisClient.incr(rateLimitKey);
-        await this.redisClient.expire(rateLimitKey, 900); // 15 phút
-        try {
-            await this.mailerService.sendMail({
-                to: sendResetPasswordDto.email,
-                from: this.configService.get<string>('MAIL_FROM') || '"Support Team" <no-reply@domain.com>',
-                subject,
-                template: 'reset-password',
-                context: {
-                    otp,
-                    year: new Date().getFullYear(),
-                },
-            });
-            return true;
-        } catch (error) {
-            console.error('Error sending email:', error);
-            // Tùy business mà throw lỗi hoặc return false
-            throw error;
-        }
+        await this.redisClient
+            .multi()
+            .incr(rateLimitKey)
+            .expire(rateLimitKey, 900) // 15 phút
+            .exec(); 
+        await this.mailQueue.add('send-reset-password', {
+            email: sendResetPasswordDto.email,
+            otp,
+            subject: subject
+        }, {
+            attempts: 3, // Thử lại 3 lần nếu lỗi
+            backoff: 5000, // Đợi 5s giữa các lần thử
+            removeOnComplete: true,
+        });
+
+        return true;
     }
 
     sendConfirmationEmail = async (
@@ -73,35 +70,28 @@ export class MailService {
         totalPrice: number
     ) => {
         const subject = '[Booking Travel] Email Confirmation';
-        const qrBuffer = await this.qrService.generateQrCodeAsBuffer(token);
         const formattedPrice = new Intl.NumberFormat('vi-VN', {
             style: 'currency',
             currency: 'VND'
         }).format(totalPrice);
         const formattedDate = new Date(startDate).toLocaleDateString('vi-VN');
 
-        return this.mailerService.sendMail({
-            to: email,
-            from: this.configService.get<string>('MAIL_FROM'),
+        await this.mailQueue.add('send-confirmation-email', {
+            email,
             subject,
-            template: 'confirm-booking',
-            context: {
-                customerName: fullName,
-                ticketCode: token,
-                tourName,
-                startDate: formattedDate,
-                numberOfGuests,
-                provider,
-                totalPrice: formattedPrice,
-                qrCode: 'cid:qrCode@booking-travel',
-            },
-            attachments: [
-                {
-                    filename: 'ticket-qr.png',
-                    content: qrBuffer,
-                    cid: 'qrCode@booking-travel'
-                }
-            ]
+            fullName,
+            token,
+            tourName,
+            formattedDate,
+            numberOfGuests,
+            provider,
+            formattedPrice,
+        }, {
+            attempts: 3, // Thử lại 3 lần nếu lỗi
+            backoff: 5000, // Đợi 5s giữa các lần thử
+            removeOnComplete: true,
         });
+
+        return true;
     }
 }
