@@ -96,11 +96,19 @@ export class TourService {
           }
         ]
       };
+    } else if (filter.timeStart_from) {
+      // Logic: Tour.Start <= UserDate <= Tour.End
+      const userDate = new Date(filter.timeStart_from);
 
-      // Xóa params ảo để không bị query nhầm
-      delete filter.timeStart_from;
-      delete filter.timeEnd_to;
+      // 1. Tour đã mở bán trước đó
+      filter.timeStart = { ...filter.timeStart, $lte: userDate };
+
+      // 2. VÀ Tour vẫn còn hạn đến sau đó (Quan trọng!)
+      filter.timeEnd = { ...filter.timeEnd, $gte: userDate };
     }
+    // Xóa params ảo để không bị query nhầm
+    delete filter.timeStart_from;
+    delete filter.timeEnd_to;
 
     // Parse destination name: destinationName=Paris
     if (filter.destinationName) {

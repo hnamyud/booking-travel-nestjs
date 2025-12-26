@@ -24,6 +24,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { CloudinaryModule } from './shared/upload/cloudinary.module';
 import { MailModule } from './shared/mailer/mail.module';
 import { SeedModule } from './seed/seed.module';
+import { StatisticModule } from './modules/statistic/statistic.module';
 
 
 @Module({
@@ -87,6 +88,7 @@ import { SeedModule } from './seed/seed.module';
     MailModule,
     RedisModule,
     SeedModule,
+    StatisticModule
   ],
   controllers: [AppController],
   providers: [
