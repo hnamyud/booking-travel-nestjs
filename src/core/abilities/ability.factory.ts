@@ -11,7 +11,7 @@ import { Destination } from 'src/modules/destination/schema/destination.schema';
 import { Review } from 'src/modules/review/schema/review.schema';
 import { Payment } from 'src/modules/payment/schemas/payment.schema';
 // Định nghĩa các subject (đối tượng) được phân quyền
-export type Subjects = InferSubjects<
+export type ClassSubjects = InferSubjects<
   typeof User |
   typeof Tour |
   typeof Booking |
@@ -20,6 +20,7 @@ export type Subjects = InferSubjects<
   typeof Payment
 > | 'all';
 
+export type Subjects = ClassSubjects | 'Statistic' | 'all';
 export type AppAbility = Ability<[Action, Subjects]>;
 
 @Injectable()
@@ -61,6 +62,7 @@ export class CaslAbilityFactory {
         can(Action.Update, Payment, ['status']);
         can(Action.Delete, Review);
         cannot(Action.Update, Review);
+        can(Action.Read, 'Statistic');
 
         cannot(Action.Create, Tour);
         cannot(Action.Update, Tour);
