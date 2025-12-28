@@ -25,6 +25,7 @@ import { CloudinaryModule } from './shared/upload/cloudinary.module';
 import { MailModule } from './shared/mailer/mail.module';
 import { SeedModule } from './seed/seed.module';
 import { StatisticModule } from './modules/statistic/statistic.module';
+import { PromotionsModule } from './modules/promotions/promotions.module';
 
 
 @Module({
@@ -88,7 +89,8 @@ import { StatisticModule } from './modules/statistic/statistic.module';
     MailModule,
     RedisModule,
     SeedModule,
-    StatisticModule
+    StatisticModule,
+    PromotionsModule
   ],
   controllers: [AppController],
   providers: [

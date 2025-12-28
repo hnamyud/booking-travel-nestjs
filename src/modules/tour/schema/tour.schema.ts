@@ -13,8 +13,14 @@ export class Tour {
     @Prop({ required: true, index: true })
     name: string;
 
+    @Prop({ required: true, unique: true })
+    slug: string;
+
     @Prop()
     description: string;
+
+    @Prop()
+    itinerary: { day: number; content: string }[];
 
     @Prop()
     duration: string;

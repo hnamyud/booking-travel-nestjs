@@ -91,7 +91,7 @@ export class DestinationService {
     const destination = await this.destinationModel.findById(id)
     .populate({ 
       path: 'topTours',
-      select: 'name duration price availableSlots ratingAverage',
+      select: 'name slug duration price availableSlots ratingAverage',
     });
     if (!destination) throw new NotFoundException('Destination not found');
 

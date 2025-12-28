@@ -1,6 +1,18 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { IsArray, IsDate, IsMongoId, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from "class-validator";
+import { IsArray, IsDate, IsMongoId, IsNotEmpty, IsNumber, IsOptional, IsString, Min, ValidateNested } from "class-validator";
+
+export class ItineraryItemDto {
+    @ApiProperty()
+    @IsNumber()
+    @Min(1, { message: 'Ngày phải lớn hơn 0' })
+    day: number;
+
+    @ApiProperty()
+    @IsString()
+    @IsNotEmpty({ message: 'Nội dung lịch trình không được bỏ trống' })
+    content: string;
+}
 
 export class CreateTourDto {
     @ApiProperty()
@@ -12,6 +24,16 @@ export class CreateTourDto {
     @IsOptional()
     @IsString()
     description: string;
+
+    @ApiProperty({ 
+        type: [ItineraryItemDto],
+        example: [{ day: 1, content: 'Đi tham quan...' }]
+    })
+    @IsOptional()
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => ItineraryItemDto)
+    itinerary?: ItineraryItemDto[];
 
     @ApiProperty()
     @IsNotEmpty({ message: 'Thời gian không được bỏ trống' })

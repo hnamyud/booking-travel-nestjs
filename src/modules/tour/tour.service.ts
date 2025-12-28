@@ -7,6 +7,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { model } from 'mongoose';
 import aqp from 'api-query-params';
 import { Destination, DestinationDocument } from '../destination/schema/destination.schema';
+import slugify from 'slugify';
 
 @Injectable()
 export class TourService {
@@ -16,9 +17,15 @@ export class TourService {
   ) { }
 
   async create(createTourDto: CreateTourDto) {
+    const slug = slugify(createTourDto.name, {
+      lower: true,      // chữ thường
+      strict: true,     // bỏ ký tự đặc biệt
+      locale: 'vi'      // hỗ trợ tiếng Việt
+    });
 
     const newTour = await this.tourModel.create({
       ...createTourDto,
+      slug: slug,
       // Khi mới tạo, số chỗ còn trống (available) = Tổng số chỗ (total)
       availableSlots: createTourDto.totalSlots,
       // Số người đã đặt bắt đầu bằng 0
@@ -153,12 +160,8 @@ export class TourService {
     };
   }
 
-  async findOne(id: string) {
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new BadRequestException('Invalid Tour ID');
-    }
-
-    const tour = await this.tourModel.findById(id)
+  async findOne(slug: string) {
+    const tour = await this.tourModel.findOne({ slug: slug })
       .populate('destinations') // Populate địa điểm (như cũ)
 
       // Dùng cái virtual vừa định nghĩa

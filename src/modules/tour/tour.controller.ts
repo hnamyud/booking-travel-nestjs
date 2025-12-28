@@ -43,10 +43,10 @@ export class TourController {
   }
 
   @Public()
-  @Get(':id')
+  @Get(':slug')
   @ResponseMessage('Fetch a tour by id')
-  findOne(@Param('id') id: string) {
-    return this.tourService.findOne(id);
+  findOne(@Param('slug') slug: string) {
+    return this.tourService.findOne(slug);
   }
 
   @Patch(':id')
