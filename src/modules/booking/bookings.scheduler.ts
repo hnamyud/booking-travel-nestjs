@@ -7,6 +7,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { StatusBooking } from 'src/common/enum/status-booking.enum';
 import { StatusPayment } from 'src/common/enum/status-payment.enum';
 import { Payment, PaymentDocument } from '../payment/schemas/payment.schema';
+import { PromotionsService } from '../promotions/promotions.service';
 
 @Injectable()
 export class BookingScheduler {
@@ -17,6 +18,7 @@ export class BookingScheduler {
         @InjectModel(Tour.name) private tourModel: Model<TourDocument>,
         @InjectModel(Payment.name) private paymentModel: Model<PaymentDocument>,
         @InjectConnection() private readonly connection: Connection, // Inject Connection để tạo Session
+        private readonly promotionService: PromotionsService,
     ) { }
 
     @Cron(CronExpression.EVERY_MINUTE)
@@ -89,6 +91,15 @@ export class BookingScheduler {
                         },
                         { session }
                     );
+
+                    // Logic: update voucher nếu có
+                    if (booking.promotion_id) {
+                     await this.promotionService.updateUsageCount(
+                        booking.promotion_id.toString(), 
+                        -1, // Trừ 1 usageCount (tức là trả lại 1 lượt)
+                        session
+                    );
+                }
 
                     await session.commitTransaction();
                     this.logger.log(`Booking ${booking._id} marked as expired and tour slots updated.`);

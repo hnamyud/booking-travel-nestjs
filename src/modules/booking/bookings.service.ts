@@ -15,6 +15,9 @@ import * as crypto from 'crypto';
 import { MailService } from 'src/shared/mailer/mail.service';
 import { Payment, PaymentDocument } from '../payment/schemas/payment.schema';
 import { VerifyTicketDto } from './dto/verify-ticket.dto';
+import { Promotion, PromotionDocument } from '../promotions/schemas/promotion.schema';
+import { DiscountType } from 'src/common/enum/discount-type.enum';
+import { PromotionsService } from '../promotions/promotions.service';
 
 @Injectable()
 export class BookingsService {
@@ -22,15 +25,18 @@ export class BookingsService {
     @InjectModel(Booking.name) private bookingModel: SoftDeleteModel<BookingDocument>,
     @InjectModel(Tour.name) private tourModel: SoftDeleteModel<TourDocument>,
     @InjectModel(Payment.name) private paymentModel: SoftDeleteModel<PaymentDocument>,
+    @InjectModel(Promotion.name) private promotionModel: SoftDeleteModel<PromotionDocument>,
     @InjectConnection() private readonly connection: Connection,
     private mailService: MailService,
     private lockService: LockService,
+    private promotionService: PromotionsService,
   ) { }
   async create(createBookingDto: CreateBookingDto, user: IUser) {
     const {
       tour_id,
       numberOfGuests,
       contactInfo,
+      code,
       note,
       startDate
     } = createBookingDto;
@@ -58,12 +64,54 @@ export class BookingsService {
         const timeStart = new Date(startDate);
         const timeEnd = new Date(startDate);
         timeEnd.setDate(timeStart.getDate() + tour.durationDays);
+        let totalPrice = tour.price * numberOfGuests;
+        let originalPrice = totalPrice;
+        let discountAmount = 0;
+        let finalPrice = totalPrice;
+        let promotionId = null;
+        
+        if (code) {
+          const promotion = await this.promotionModel.findOne({ code }).session(session);
+          if(!promotion) throw new NotFoundException('Mã khuyến mãi không tồn tại');
+          const now = new Date();
+          if (!promotion.isActive) throw new BadRequestException('Khuyến mãi không còn hoạt động');
+          if (promotion.startDate > now || promotion.endDate < now) throw new BadRequestException('Khuyến mãi chưa trong thời gian áp dụng');
+          if (promotion.usageLimit <= promotion.usageCount) throw new BadRequestException('Khuyến mãi đã đạt giới hạn sử dụng');
+          if (promotion.minBookingValue > totalPrice) throw new BadRequestException('Giá trị đơn hàng không đủ để áp dụng khuyến mãi');
+
+          switch (promotion.discountType) {
+            case DiscountType.Percentage:
+              discountAmount = totalPrice * (promotion.discountValue / 100);
+              if (discountAmount > promotion.maxDiscountAmount) {
+                discountAmount = promotion.maxDiscountAmount;
+              }
+              break;
+            case DiscountType.FixedAmount:
+              discountAmount = promotion.discountValue;
+              break;
+            default:
+              throw new BadRequestException('Loại khuyến mãi không hợp lệ');
+          }
+
+          finalPrice = totalPrice - discountAmount;
+          if(finalPrice < 0) finalPrice = 0;
+          promotionId = promotion._id;
+
+          await this.promotionService.updateUsageCount(
+            promotion._id.toString(), 
+            1, 
+            session
+          );
+        }
 
         const newBooking = await this.bookingModel.create([{
           tour_id,
           user_id: user._id,
           numberOfGuests,
-          totalPrice: tour.price * numberOfGuests,
+          totalPrice: finalPrice,
+          originalPrice: originalPrice,
+          discountAmount: discountAmount,
+          promotion_id: promotionId,
           status: StatusBooking.Pending,
           payment_status: StatusPayment.Pending,
           contactInfo,

@@ -39,6 +39,11 @@ export class CreateBookingDto {
     @ApiProperty()
     @IsOptional()
     @IsString()
+    code: string; // Voucher
+
+    @ApiProperty()
+    @IsOptional()
+    @IsString()
     note?: string;
 
     @ApiProperty({ example: '2025-12-25' })

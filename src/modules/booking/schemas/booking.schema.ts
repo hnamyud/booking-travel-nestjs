@@ -15,6 +15,15 @@ export class Booking {
     @Prop({ required: true, min: 1 })
     numberOfGuests: number;
 
+    @Prop()
+    promotion_id?: mongoose.Schema.Types.ObjectId;
+
+    @Prop({ min: 0 })
+    discountAmount?: number;
+
+    @Prop({ required: true, min: 0 })
+    originalPrice: number;
+
     @Prop({ required: true, min: 0 })
     totalPrice: number;
 

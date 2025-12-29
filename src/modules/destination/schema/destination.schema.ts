@@ -7,32 +7,32 @@ export interface CloudinaryImage {
   url: string;
   public_id: string;
 }
-@Schema({ 
+@Schema({
   timestamps: true,
   toJSON: { virtuals: true }, // Virtual field
   toObject: { virtuals: true }
 })
 export class Destination {
-    @Prop()
-    name: string;
+  @Prop()
+  name: string;
 
-    @Prop()
-    country: string;
+  @Prop()
+  country: string;
 
-    @Prop()
-    description: string;
+  @Prop()
+  description: string;
 
-    @Prop({ 
-      type: [{ url: String, public_id: String }], // ✅ Array of objects
-      required: true 
-    })
-    images: CloudinaryImage[];
+  @Prop({
+    type: [{ url: String, public_id: String }], // ✅ Array of objects
+    required: true
+  })
+  images: CloudinaryImage[];
 
-    @Prop()
-    createdAt: Date;
+  @Prop()
+  createdAt: Date;
 
-    @Prop()
-    updatedAt: Date;
+  @Prop()
+  updatedAt: Date;
 
 }
 
@@ -42,10 +42,10 @@ DestinationSchema.virtual('topTours', {
   localField: '_id',
   foreignField: 'destinations',
   justOne: false,
-  options: { 
-    sort: { 
-      ratingAverage: -1 
-    }, 
-    limit: 5 
+  options: {
+    sort: {
+      ratingAverage: -1
+    },
+    limit: 5
   }
 })
