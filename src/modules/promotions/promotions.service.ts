@@ -159,7 +159,7 @@ export class PromotionsService {
     });
   }
 
-  updateUsageCount = async (id: string, increment: number, session: ClientSession) => {
+  updateUsageCount = async (id: string, increment: number, session?: ClientSession) => {
     return await this.promotionModel.findByIdAndUpdate(
       id,
       { $inc: { usageCount: increment } },

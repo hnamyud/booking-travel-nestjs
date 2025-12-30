@@ -7,11 +7,13 @@ import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import mongoose from 'mongoose';
 import aqp from 'api-query-params';
 import { CloudinaryService } from 'src/shared/upload/cloudinary.service';
+import { Tour, TourDocument } from '../tour/schema/tour.schema';
 
 @Injectable()
 export class DestinationService {
   constructor(
     @InjectModel(Destination.name) private destinationModel: SoftDeleteModel<DestinationDocument>,
+    @InjectModel(Tour.name) private tourModel: SoftDeleteModel<TourDocument>,
     private cloudinaryService: CloudinaryService
   ) { }
 
@@ -138,7 +140,7 @@ export class DestinationService {
         console.log(`✅ Đã xóa ${successCount}/${destination.images.length} ảnh`);
 
         if (failCount > 0) {
-          console.warn(`⚠️ Không xóa được ${failCount} ảnh`);
+          console.warn(`Không xóa được ${failCount} ảnh`);
         }
       } catch (error) {
         console.error('Lỗi khi xóa ảnh:', error);
@@ -147,12 +149,62 @@ export class DestinationService {
       }
     }
 
-    // ✅ Bước 3: Soft delete destination
+    // Soft delete destination
     const result = await this.destinationModel.softDelete({ _id: id });
 
     return {
       deleted: result.deleted,
       message: 'Xóa destination và ảnh thành công'
     };
+  }
+
+  getTopDestinations = async () => {
+    const limit = 4;
+    const destinations = await this.tourModel.aggregate([
+      {
+        $match: {
+          ratingQuantity: { $gte: 1 },
+          isDeleted: { $ne: true },
+          isAvailable: true
+        }
+      },
+      {
+        $unwind: '$destinations'
+      },
+      {
+        $group: {
+          _id: '$destinations',
+          avgRating: { $avg: '$ratingAverage' },
+          tourCount: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { avgRating: -1 }
+      },
+      {
+        $limit: limit
+      },
+      {
+        $lookup: {
+          from: 'destinations',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'destinationInfo'
+        }
+      },
+      { 
+        $unwind: '$destinationInfo' 
+      },
+      {
+        $project: {
+          _id: '$destinationInfo._id',
+          name: '$destinationInfo.name',
+          avgRating: { $round: ['$avgRating', 1] },
+          image: { $arrayElemAt: ['$destinationInfo.images.url', 0] },
+          tourCount: '$tourCount'
+        }
+      }
+    ]);
+    return destinations;
   }
 }

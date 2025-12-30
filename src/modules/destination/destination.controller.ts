@@ -43,6 +43,13 @@ export class DestinationController {
   ) {
     return this.destinationService.findAll(+currentPage, +limit, qs);
   }
+  
+  @Public()
+  @Get('top-rated')
+  @ResponseMessage("Fetch top destinations")
+  findTopDestinations() {
+    return this.destinationService.getTopDestinations();
+  }
 
   @Public()
   @ResponseMessage("Fetch destination by id")

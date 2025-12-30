@@ -18,6 +18,7 @@ import { VerifyTicketDto } from './dto/verify-ticket.dto';
 import { Promotion, PromotionDocument } from '../promotions/schemas/promotion.schema';
 import { DiscountType } from 'src/common/enum/discount-type.enum';
 import { PromotionsService } from '../promotions/promotions.service';
+import { session } from 'passport';
 
 @Injectable()
 export class BookingsService {
@@ -69,10 +70,10 @@ export class BookingsService {
         let discountAmount = 0;
         let finalPrice = totalPrice;
         let promotionId = null;
-        
+
         if (code) {
           const promotion = await this.promotionModel.findOne({ code }).session(session);
-          if(!promotion) throw new NotFoundException('Mã khuyến mãi không tồn tại');
+          if (!promotion) throw new NotFoundException('Mã khuyến mãi không tồn tại');
           const now = new Date();
           if (!promotion.isActive) throw new BadRequestException('Khuyến mãi không còn hoạt động');
           if (promotion.startDate > now || promotion.endDate < now) throw new BadRequestException('Khuyến mãi chưa trong thời gian áp dụng');
@@ -94,12 +95,12 @@ export class BookingsService {
           }
 
           finalPrice = totalPrice - discountAmount;
-          if(finalPrice < 0) finalPrice = 0;
+          if (finalPrice < 0) finalPrice = 0;
           promotionId = promotion._id;
 
           await this.promotionService.updateUsageCount(
-            promotion._id.toString(), 
-            1, 
+            promotion._id.toString(),
+            1,
             session
           );
         }
@@ -305,40 +306,58 @@ export class BookingsService {
   }
 
   cancelBooking = async (id: string) => {
-    const booking = await this.bookingModel.findById(id);
-    if (!booking) {
-      throw new BadRequestException('Booking not found');
-    }
-
-    const terminalStatuses = [
-      StatusBooking.Cancelled,
-      StatusBooking.Expired,
-      StatusBooking.Failed
-    ];
-    if (terminalStatuses.includes(booking.status)) {
-      throw new BadRequestException(`Booking đã ở trạng thái ${booking.status}, không thể hủy tiếp.`);
-    }
-    if (booking.status === StatusBooking.Completed) {
-      throw new BadRequestException('Đơn đã hoàn thành, không thể hủy ngang. Vui lòng dùng chức năng Hoàn tiền.');
-    }
-
-    booking.status = StatusBooking.Cancelled;
-    booking.payment_status = StatusPayment.Failed;
-    booking.updatedAt = new Date();
-    await booking.save();
-
-    // Logic: Cập nhật lại số lượng vé trong Tour
-    await this.tourModel.updateOne(
-      { _id: booking.tour_id },
-      {
-        $inc: {
-          availableSlots: booking.numberOfGuests,
-          bookedParticipants: -booking.numberOfGuests
-        }
+    const session = await this.connection.startSession();
+    session.startTransaction();
+    try {
+      const booking = await this.bookingModel.findById(id);
+      if (!booking) {
+        throw new BadRequestException('Booking not found');
       }
-    );
 
-    return booking;
+      const terminalStatuses = [
+        StatusBooking.Cancelled,
+        StatusBooking.Expired,
+        StatusBooking.Failed
+      ];
+      if (terminalStatuses.includes(booking.status)) {
+        throw new BadRequestException(`Booking đã ở trạng thái ${booking.status}, không thể hủy tiếp.`);
+      }
+      if (booking.status === StatusBooking.Completed) {
+        throw new BadRequestException('Đơn đã hoàn thành, không thể hủy ngang. Vui lòng dùng chức năng Hoàn tiền.');
+      }
+
+      booking.status = StatusBooking.Cancelled;
+      booking.payment_status = StatusPayment.Failed;
+      booking.updatedAt = new Date();
+      await booking.save({ session });
+
+      // Logic: Cập nhật lại số lượng vé trong Tour
+      await this.tourModel.updateOne(
+        { _id: booking.tour_id },
+        {
+          $inc: {
+            availableSlots: booking.numberOfGuests,
+            bookedParticipants: -booking.numberOfGuests
+          }
+        }
+      );
+
+      if (booking.promotion_id) {
+        await this.promotionService.updateUsageCount(
+          booking.promotion_id.toString(),
+          -1,
+          session
+        );
+      }
+
+      return booking;
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      await session.endSession();
+    }
+
   }
 
   verifyTicket = async (verifyTicketDto: VerifyTicketDto) => {
