@@ -6,6 +6,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { CaslModule } from 'src/core/abilities/casl.module';
 import { CloudinaryModule } from 'src/shared/upload/cloudinary.module';
 import { Tour, TourSchema } from '../tour/schema/tour.schema';
+import { RedisModule } from 'src/shared/cache/redis.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { Tour, TourSchema } from '../tour/schema/tour.schema';
       { name: Tour.name, schema: TourSchema }
     ]),
     CloudinaryModule,
+    RedisModule,
     CaslModule
   ],
     controllers: [DestinationController],

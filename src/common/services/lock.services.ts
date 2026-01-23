@@ -1,4 +1,3 @@
-// src/common/services/lock.service.ts
 import { Inject, Injectable } from '@nestjs/common';
 import Redis from 'ioredis';
 

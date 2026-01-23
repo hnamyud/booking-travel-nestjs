@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateDestinationDto } from './dto/create-destination.dto';
 import { UpdateDestinationDto } from './dto/update-destination.dto';
 import { Destination, DestinationDocument } from './schema/destination.schema';
@@ -8,13 +8,15 @@ import mongoose from 'mongoose';
 import aqp from 'api-query-params';
 import { CloudinaryService } from 'src/shared/upload/cloudinary.service';
 import { Tour, TourDocument } from '../tour/schema/tour.schema';
+import Redis from 'ioredis';
 
 @Injectable()
 export class DestinationService {
   constructor(
     @InjectModel(Destination.name) private destinationModel: SoftDeleteModel<DestinationDocument>,
     @InjectModel(Tour.name) private tourModel: SoftDeleteModel<TourDocument>,
-    private cloudinaryService: CloudinaryService
+    private cloudinaryService: CloudinaryService,
+    @Inject('REDIS_CLIENT') private redis: Redis
   ) { }
 
   async create(createDestinationDto: CreateDestinationDto) {
@@ -32,70 +34,91 @@ export class DestinationService {
   }
 
   async findAll(currentPage: number, limit: number, qs: string) {
+  
     const { filter, sort, population } = aqp(qs);
     delete filter.current;
     delete filter.pageSize;
-    let offset = (+currentPage - 1) * (+limit);
+
+    let page = +currentPage || 1;
+    let limitItem = +limit || 10;
+    let offset = (page - 1) * limitItem;
     let defaultLimit = +limit ? +limit : 10;
+
+    const isDefaultRequest = page === 1 && !filter.destinationName;
+    const cacheKey = `dst_df_lm:${limitItem}`;
+
+    if (isDefaultRequest) {
+        // ioredis trả về chuỗi String hoặc null
+        const cachedRaw = await this.redis.get(cacheKey);
+        
+        if (cachedRaw) {
+            // Parse từ String sang Object
+            return JSON.parse(cachedRaw);
+        }
+    }
 
     // Parse destination name: destinationName=keyword (tìm trong name hoặc country)
     if (filter.destinationName) {
         const keyword = filter.destinationName;
-        const regex = new RegExp(keyword, 'i'); // Regex không phân biệt hoa thường
-
-        // Dùng toán tử $or: Tìm trong 'name' HOẶC tìm trong 'country'
-        // Cú pháp của Mongoose cho phép merge object như này:
-        const searchCondition = {
-            $or: [
-                { name: regex },      // Khớp tên thành phố
-                { country: regex }    // Khớp tên quốc gia
-            ]
-        };
-
-        // Merge điều kiện tìm kiếm vào filter chính
-        Object.assign(filter, searchCondition);
-
-        // Xóa param gốc để tránh aqp tự query sai
+        const regex = new RegExp(keyword, 'i'); 
+        Object.assign(filter, { $or: [{ name: regex }, { country: regex }] });
         delete filter.destinationName;
     }
 
-    // Đảm bảo không lấy bản ghi đã xóa
     filter.isDeleted = { $ne: true };
 
-    // --- QUERY ---
-    // (Phần còn lại giữ nguyên như code tối ưu trước đó)
-    const totalItems = await this.destinationModel.countDocuments(filter);
-    const totalPages = Math.ceil(totalItems / defaultLimit);
+    const [totalItems, result] = await Promise.all([
+        this.destinationModel.countDocuments(filter),
+        this.destinationModel.find(filter)
+            .select('-__v -isDeleted')
+            .sort(sort as any)
+            .skip(offset)
+            .limit(limitItem)
+            .populate(population)
+            .lean() // Bắt buộc dùng lean() để object nhẹ, dễ stringify
+            .exec()
+    ]);
 
-    const result = await this.destinationModel.find(filter)
-        .select('-__v -isDeleted') 
-        .sort(sort as any) 
-        .skip(offset)
-        .limit(defaultLimit)
-        .populate(population)
-        .exec();
-
-    return {
+    const totalPages = Math.ceil(totalItems / limitItem);
+    
+    const finalResponse = {
       meta: {
-        current: currentPage,
-        pageSize: defaultLimit,
+        current: page,
+        pageSize: limitItem,
         pages: totalPages,
         total: totalItems
       },
       result
     };
+
+    // --- 3. LOGIC SET CACHE (Native Redis) ---
+    if (isDefaultRequest) {
+        // [QUAN TRỌNG]
+        // 1. Phải Stringify object
+        // 2. Dùng 'EX' để set thời gian hết hạn (tính bằng GIÂY)
+        // 300 giây = 5 phút
+        await this.redis.set(cacheKey, JSON.stringify(finalResponse), 'EX', 3600);
+    }
+
+    return finalResponse;
   }
 
   async findOne(id: string) {
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return `Not found destination`;
+      throw new BadRequestException('ID không hợp lệ');
     };
+    const cacheKey = `dst_dt:${id}`;
+    const catchRaw = await this.redis.get(cacheKey);
+    if(catchRaw) return JSON.parse(catchRaw);
     const destination = await this.destinationModel.findById(id)
-    .populate({ 
-      path: 'topTours',
-      select: 'name slug duration price availableSlots ratingAverage',
-    });
+      .populate({
+        path: 'topTours',
+        select: 'name slug duration price availableSlots ratingAverage',
+      })
+      .lean();
     if (!destination) throw new NotFoundException('Destination not found');
+
+    await this.redis.set(cacheKey, JSON.stringify(destination), 'EX', 300); // 10 minutes
 
     return destination;
   }
@@ -192,8 +215,8 @@ export class DestinationService {
           as: 'destinationInfo'
         }
       },
-      { 
-        $unwind: '$destinationInfo' 
+      {
+        $unwind: '$destinationInfo'
       },
       {
         $project: {

@@ -1,4 +1,4 @@
-import { Logger, MiddlewareConsumer, Module } from '@nestjs/common';
+import { CacheModule, Logger, MiddlewareConsumer, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -26,7 +26,6 @@ import { MailModule } from './shared/mailer/mail.module';
 import { SeedModule } from './seed/seed.module';
 import { StatisticModule } from './modules/statistic/statistic.module';
 import { PromotionsModule } from './modules/promotions/promotions.module';
-
 
 @Module({
   imports: [
@@ -94,14 +93,14 @@ import { PromotionsModule } from './modules/promotions/promotions.module';
   ],
   controllers: [AppController],
   providers: [
-    AppService, 
+    AppService,
     {
       provide: APP_GUARD,
       useClass: AppThrottlerGuard,
     }
   ],
 })
-export class AppModule { 
+export class AppModule {
   // Configure middleware globally
   configure(consumer: MiddlewareConsumer) {
     consumer
